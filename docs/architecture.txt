@@ -1,7 +1,7 @@
 ================================================================================
  ARCHITECTURE DU CODE — personnal_heath
  Application mobile de suivi personnel de santé et de rappels médicaux
- Statut : PROPOSITION (à valider), 2026-11-07
+ Statut : VALIDÉE le 2026-11-07, mise en œuvre étape par étape (section 9)
  Basée sur : CAHIER DES CHARGES SIMPLIFIÉ.md
 ================================================================================
 

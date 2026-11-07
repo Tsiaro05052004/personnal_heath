@@ -6,9 +6,9 @@ Shared instructions for AI coding agents (Claude Code, Codex, Gemini) working in
 
 Flutter app `personnal_heath` (personal health tracker — note the package name keeps the "heath" spelling; don't "fix" it in imports, it would break `package:personnal_heath/...`).
 
-The project is currently the unmodified `flutter create` template: `lib/main.dart` holds the counter demo (`MyApp` / `MyHomePage`) and `test/widget_test.dart` is the matching smoke test. No architecture, state management, persistence, or routing has been chosen yet — when one is introduced, record the decision in the "Architecture" section below.
+Step 1 of the architecture (foundation) is done: theme, go_router shell with 5 bottom tabs, Drift database with all tables, placeholder screens per feature. No business feature is implemented yet; see `docs/progress.md` for the current step.
 
-- Dart SDK `^3.13.5`; only dependency beyond Flutter is `cupertino_icons`.
+- Dart SDK `^3.13.5`; main deps: flutter_riverpod 3, go_router, drift + drift_flutter, intl, uuid.
 - Lints: `flutter_lints` (`analysis_options.yaml`), with platform folders and `build/` excluded from analysis.
 - Platforms scaffolded: android, ios, linux, macos (no web/windows).
 - Git repository, default branch `main` (no remote yet).
@@ -44,16 +44,20 @@ flutter run                                  # run on an attached device/emulato
 flutter analyze                              # lint / static analysis
 dart format lib test                         # format
 flutter test                                 # all tests
-flutter test test/widget_test.dart           # single test file
-flutter test --plain-name "Counter increments smoke test"   # single test by name
+flutter test test/app/app_test.dart          # single test file
+flutter test --plain-name "la barre du bas change de page"  # single test by name
+dart run build_runner build                  # regenerate Drift code (*.g.dart) after editing tables
+flutter build apk --debug                    # Android build (JDK 21 configured via flutter config)
 ```
 
 ## Architecture
 
-**Proposed, not yet validated by the user, and not implemented yet.** Full description (French): `docs/architecture.txt`. Read it before adding code.
+**Validated by the user on 2026-11-07; being implemented step by step** (order in section 9 of the doc). Full description (French): `docs/architecture.txt`. Read it before adding code.
 
 - Feature-first: `lib/app/` (root widget, go_router, bottom nav shell, theme), `lib/core/` (Drift DB, notifications + reminder scheduler, background tasks, sync, location, permissions, shared widgets), `lib/features/<auth|dashboard|medications|hydration|hospitals|history|settings>/` each split into `data/` (local DAO, remote, repository impl), `domain/` (pure-Dart entities, repository interface, business-rule services), `presentation/` (Riverpod providers, screens, widgets).
 - Stack: Riverpod, go_router, Drift (local DB = source of truth, offline-first), Supabase (auth + Postgres with RLS `user_id = auth.uid()`, sync), flutter_local_notifications + timezone + workmanager, flutter_map + Overpass API + geolocator, url_launcher.
+- Implemented conventions: bottom tabs = Accueil, Médicaments, Eau, Carte, Historique; Paramètres is a full-screen route opened from the ⚙ app-bar icon (`SettingsAction`). Route paths live in `AppRoutes` (`lib/app/router.dart`). The DB is exposed by `appDatabaseProvider`; tests override it with `AppDatabase(NativeDatabase.memory())`.
+- Drift tables use the `SyncColumns` mixin (UUID `id` via `newId()`, `userId`, `updatedAt`, `deleted`, `dirty`). Times of day are stored as minutes since midnight. Domain enums (`MealInstruction`, `IntakeStatus`) are stored with `textEnum`. Generated `*.g.dart` files are committed.
 - Reminders are OS-scheduled over a rolling 2–3 day window and rebuilt on app start, on treatment/water changes, daily, and after reboot. Confirming an intake cancels its follow-up reminder and alarm.
 
 ## Working notes
