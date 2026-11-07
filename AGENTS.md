@@ -13,6 +13,28 @@ The project is currently the unmodified `flutter create` template: `lib/main.dar
 - Platforms scaffolded: android, ios, linux, macos (no web/windows).
 - Git repository, default branch `main` (no remote yet).
 
+## Product spec (summary)
+
+Full spec: `CAHIER DES CHARGES SIMPLIFIÉ.md` at the repo root (French). Read it before designing any feature. Key points:
+
+- **Purpose:** personal health assistant: medication reminders and intake tracking, daily water goal, nearby hospitals map, daily dashboard. Target users include elderly / non-technical people, so the UI must stay very simple.
+- **Pages:** Connexion/Inscription, Accueil (daily dashboard), Carte, Mes médicaments, Suivi des médicaments, Hydratation, Historique, Paramètres.
+- **MVP (must-have):** auth, dashboard, OpenStreetMap hospital map, medication CRUD + schedules, notifications/alarms, intake counter, water goal + glass counter. Important: daily history. Later: weekly/monthly stats, sharing with a relative, health-professional link, prescriptions photo, appointments, stock alerts.
+- **Medication record:** name, dosage (e.g. 500 mg), quantity per intake, frequency (intakes/day), times, start date, end date, instructions (before/after meal).
+- **Water:** daily goal in glasses, ml per glass, wake/sleep times used to spread reminders; never push drinking a lot at once.
+- **Map:** OpenStreetMap via `flutter_map`, user location with permission, markers for hospitals/clinics/health centres; detail sheet with name, address, type, distance, phone, route; search by name/place. Respect the tile provider's usage policy; OSM data may be outdated.
+
+Business rules that must hold:
+
+- One "intake" (prise) ≠ number of pills: 2 pills at 08:00 = 1 intake, 2 pills consumed.
+- Unconfirmed ≠ missed: the app can't know a dose was taken unless the user confirms. Confirming late records the **actual** time; the user can also mark a dose as missed.
+- Reminder at the scheduled time → second reminder if still unconfirmed → optional sound alarm if the user allowed it.
+- Reminders stop at the treatment end date; editing a treatment reschedules its reminders.
+- Water goal reached → success message; day ends below goal → "goal not reached" summary.
+- **Never** change doses, suggest doubling a missed dose, or give medical advice: the app is a reminder tool, not a doctor.
+
+Technical constraints: Android first (iOS nice to have); notifications must fire with the app closed; tracking must work offline once configured; health data stored securely, accessible only by its owner, account + data deletable. Suggested backend in the spec: Supabase or Firebase (auth + DB). Not decided yet.
+
 ## Commands
 
 ```bash

@@ -13,7 +13,9 @@ _Rien pour l'instant._
 
 ## Prochaines étapes
 
-- [ ] Définir les fonctionnalités de l'application (suivi de quelles données de santé ?)
+- [x] Définir les fonctionnalités → `CAHIER DES CHARGES SIMPLIFIÉ.md` (résumé dans `AGENTS.md`)
+- [ ] Faire compiler l'app sur le téléphone Android (voir Problèmes connus)
+- [ ] Choisir Supabase ou Firebase (auth + base de données)
 - [ ] Choisir la gestion d'état, le stockage local et la navigation → noter dans `AGENTS.md` (section Architecture)
 - [x] Initialiser le dépôt git
 
@@ -25,10 +27,13 @@ _Rien pour l'instant._
 
 ## Problèmes connus
 
-_Aucun._
+- **Build Android échoue** : `Toolchain installation '/usr/lib/jvm/java-25-openjdk' does not provide the required capabilities: [JAVA_COMPILER]`. Seul le JRE Java 25 (headless) est installé, sans `javac`. Correctif : `sudo dnf install java-21-openjdk-devel` puis `flutter config --jdk-dir=/usr/lib/jvm/java-21-openjdk`.
+- `flutter doctor` : `cmdline-tools` Android manquant, licences non acceptées ; `clang++` et `ninja` manquants pour la cible Linux desktop.
 
 ## Journal
 
 ### 2026-11-07
 - Création de `AGENTS.md`, `CLAUDE.md`, `GEMINI.md` et `docs/progress.md`.
 - `git init` (branche `main`) + premier commit.
+- Ajout du cahier des charges, résumé dans `AGENTS.md`.
+- Diagnostic du build Android : JDK sans compilateur (voir Problèmes connus). Téléphone de test : Realme RMX2111, Android 12 (API 31).
