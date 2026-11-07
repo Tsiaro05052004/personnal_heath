@@ -15,8 +15,8 @@ _Rien pour l'instant._
 
 - [x] Définir les fonctionnalités → `CAHIER DES CHARGES SIMPLIFIÉ.md` (résumé dans `AGENTS.md`)
 - [ ] Faire compiler l'app sur le téléphone Android (voir Problèmes connus)
-- [ ] Choisir Supabase ou Firebase (auth + base de données)
-- [ ] Choisir la gestion d'état, le stockage local et la navigation → noter dans `AGENTS.md` (section Architecture)
+- [ ] Valider l'architecture proposée dans `docs/architecture.txt` (Riverpod, go_router, Drift, Supabase…)
+- [ ] Mettre en place le socle (étape 1 de la section 9 de `docs/architecture.txt`)
 - [x] Initialiser le dépôt git
 
 ## Décisions prises
@@ -37,3 +37,4 @@ _Rien pour l'instant._
 - `git init` (branche `main`) + premier commit.
 - Ajout du cahier des charges, résumé dans `AGENTS.md`.
 - Diagnostic du build Android : JDK sans compilateur (voir Problèmes connus). Téléphone de test : Realme RMX2111, Android 12 (API 31).
+- Proposition d'architecture rédigée dans `docs/architecture.txt` (en attente de validation).

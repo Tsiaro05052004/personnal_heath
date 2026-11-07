@@ -50,7 +50,11 @@ flutter test --plain-name "Counter increments smoke test"   # single test by nam
 
 ## Architecture
 
-_To be defined._ Record here: state-management choice, folder layout under `lib/`, local storage / backend, navigation approach, and the reason for each.
+**Proposed, not yet validated by the user, and not implemented yet.** Full description (French): `docs/architecture.txt`. Read it before adding code.
+
+- Feature-first: `lib/app/` (root widget, go_router, bottom nav shell, theme), `lib/core/` (Drift DB, notifications + reminder scheduler, background tasks, sync, location, permissions, shared widgets), `lib/features/<auth|dashboard|medications|hydration|hospitals|history|settings>/` each split into `data/` (local DAO, remote, repository impl), `domain/` (pure-Dart entities, repository interface, business-rule services), `presentation/` (Riverpod providers, screens, widgets).
+- Stack: Riverpod, go_router, Drift (local DB = source of truth, offline-first), Supabase (auth + Postgres with RLS `user_id = auth.uid()`, sync), flutter_local_notifications + timezone + workmanager, flutter_map + Overpass API + geolocator, url_launcher.
+- Reminders are OS-scheduled over a rolling 2–3 day window and rebuilt on app start, on treatment/water changes, daily, and after reboot. Confirming an intake cancels its follow-up reminder and alarm.
 
 ## Working notes
 

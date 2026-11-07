@@ -1,0 +1,322 @@
+================================================================================
+ ARCHITECTURE DU CODE — personnal_heath
+ Application mobile de suivi personnel de santé et de rappels médicaux
+ Statut : PROPOSITION (à valider), 2026-11-07
+ Basée sur : CAHIER DES CHARGES SIMPLIFIÉ.md
+================================================================================
+
+1. PRINCIPES DIRECTEURS
+--------------------------------------------------------------------------------
+Les exigences du cahier des charges qui guident les choix :
+
+  - Hors ligne d'abord : le suivi doit fonctionner sans Internet une fois
+    configuré  →  base de données LOCALE = source de vérité, le serveur sert
+    à l'authentification et à la sauvegarde/synchronisation.
+  - Notifications même application fermée  →  notifications PLANIFIÉES par
+    le système Android (pas un minuteur dans l'application).
+  - Données médicales confidentielles  →  chaque ligne appartient à un
+    utilisateur, protégée côté serveur (Row Level Security) ; session stockée
+    dans un stockage chiffré.
+  - Utilisateurs âgés / non techniciens  →  interface simple, grands boutons,
+    navigation par barre en bas avec 5 onglets maximum.
+  - Règle médicale : l'application rappelle et compte, elle ne conseille
+    jamais (pas de calcul de dose, pas de « doublez la prise »).
+
+Organisation : « feature-first ». Chaque fonctionnalité du cahier des charges
+a son propre dossier, découpé en 3 couches (data / domain / presentation).
+Le code partagé par plusieurs fonctionnalités va dans core/.
+
+
+2. CHOIX TECHNIQUES
+--------------------------------------------------------------------------------
+  Besoin                     Paquet / service           Pourquoi
+  -------------------------  -------------------------  ---------------------------
+  Gestion d'état             flutter_riverpod           Simple, testable, pas de
+                                                        BuildContext nécessaire
+  Navigation                 go_router                  Routes nommées, redirection
+                                                        si non connecté, onglets
+  Base locale (hors ligne)   drift (SQLite)             Requêtes typées, flux
+                                                        réactifs (Stream), migrations
+  Backend : auth + données   supabase_flutter           PostgreSQL + RLS (chaque
+                                                        utilisateur ne voit que ses
+                                                        données), proposé par le CDC
+  Stockage sécurisé          flutter_secure_storage     Jetons de session chiffrés
+  Notifications planifiées   flutter_local_notifications  Fonctionnent appli fermée,
+                             + timezone                 planification à l'heure exacte
+  Tâches en arrière-plan     workmanager                Replanifier les rappels
+                                                        chaque jour, synchroniser
+  Carte                      flutter_map + latlong2     OpenStreetMap (exigé par
+                                                        le CDC)
+  Hôpitaux à proximité       API Overpass (OSM)         Données OSM : amenity=hospital,
+                             via package http           clinic, doctors, healthcare=*
+  Géolocalisation            geolocator                 Position + calcul de distance
+  Permissions                permission_handler         Localisation, notifications,
+                                                        alarmes exactes
+  Itinéraire / appel         url_launcher               Ouvre l'appli GPS ou le
+                                                        téléphone
+  Dates / format FR          intl                       Heures et dates en français
+
+  REMARQUE : le CDC laisse le choix Supabase / Firebase. Supabase est recommandé
+  ici (SQL relationnel adapté aux médicaments/horaires/prises, RLS simple).
+  Grâce au découpage en couches, seul le dossier data/remote changerait si on
+  passait à Firebase.
+
+
+3. ARBORESCENCE
+--------------------------------------------------------------------------------
+lib/
+├── main.dart                     Point d'entrée : initialise Supabase, la base
+│                                 locale, les fuseaux horaires et les
+│                                 notifications, puis lance l'application.
+│
+├── app/                          ASSEMBLAGE DE L'APPLICATION
+│   ├── app.dart                  Widget racine (MaterialApp.router, thème, langue)
+│   ├── router.dart               Toutes les routes go_router + redirection
+│   │                             vers /login si l'utilisateur n'est pas connecté
+│   ├── shell_scaffold.dart       Barre de navigation du bas (5 onglets)
+│   └── theme.dart                Couleurs, typographie, grandes tailles de texte
+│
+├── core/                         CODE TRANSVERSAL (utilisé par plusieurs features)
+│   ├── database/
+│   │   ├── app_database.dart     Base Drift : déclaration des tables, migrations
+│   │   └── tables/               Une table par fichier (medications, schedules,
+│   │                             intake_logs, water_settings, water_logs,
+│   │                             hospitals_cache)
+│   ├── notifications/
+│   │   ├── notification_service.dart   Seul point d'accès aux notifications :
+│   │   │                               planifier, annuler, gérer le clic
+│   │   ├── reminder_scheduler.dart     Recalcule TOUS les rappels à venir à
+│   │   │                               partir des médicaments et de l'objectif
+│   │   │                               d'eau (voir section 6)
+│   │   └── notification_ids.dart       Règle de calcul des identifiants pour
+│   │                                   pouvoir annuler un rappel précis
+│   ├── background/
+│   │   └── background_tasks.dart       Tâches workmanager (replanification
+│   │                                   quotidienne, synchronisation)
+│   ├── sync/
+│   │   └── sync_service.dart     Envoie les modifications locales vers
+│   │                             Supabase et récupère celles du serveur
+│   ├── location/
+│   │   └── location_service.dart Permission + position actuelle + distance
+│   ├── permissions/
+│   │   └── permission_service.dart  Demande et explique les autorisations
+│   ├── utils/                    Dates, formatage, validation de formulaires
+│   └── widgets/                  Widgets réutilisables (gros bouton, carte de
+│                                 progression, état vide, dialogue de confirmation)
+│
+└── features/                     UNE FONCTIONNALITÉ = UN DOSSIER
+    ├── auth/                     Connexion / Inscription / Déconnexion /
+    │                             Suppression du compte
+    ├── dashboard/                Accueil : résumé de la journée
+    ├── medications/              Mes médicaments + Suivi des prises
+    ├── hydration/                Objectif et compteur d'eau
+    ├── hospitals/                Carte des établissements de santé
+    ├── history/                  Bilans des jours précédents
+    └── settings/                 Profil, notifications, alarmes, permissions
+
+Chaque dossier de features/ suit le même modèle :
+
+features/<nom>/
+├── data/
+│   ├── local/                    Accès à la base Drift (DAO)
+│   ├── remote/                   Accès à Supabase / API externe
+│   └── <nom>_repository_impl.dart  Combine local + distant ; l'interface ne
+│                                    voit jamais d'où vient la donnée
+├── domain/
+│   ├── entities/                 Objets métier purs (aucun import Flutter)
+│   ├── <nom>_repository.dart     Interface (contrat) du dépôt
+│   └── services/                 Règles métier pures, faciles à tester
+└── presentation/
+    ├── providers/                Providers Riverpod / contrôleurs d'état
+    ├── screens/                  Pages complètes
+    └── widgets/                  Composants propres à la fonctionnalité
+
+test/ reprend la même arborescence que lib/.
+
+
+4. RÔLE DES COUCHES
+--------------------------------------------------------------------------------
+  presentation  →  Affiche l'état et transmet les actions de l'utilisateur.
+                   Ne contient AUCUNE règle métier ni appel SQL/réseau.
+                   Ex. : le bouton « Confirmer la prise » appelle
+                   intakeController.confirm(...).
+
+  domain        →  Le cœur : entités et règles du cahier des charges.
+                   Dart pur, sans Flutter, Drift ni Supabase. C'est ici
+                   qu'on teste « 2 comprimés = 1 prise » ou « non confirmée
+                   ≠ oubliée ».
+
+  data          →  Lit et écrit les données. Écrit TOUJOURS d'abord en local
+                   (hors ligne), puis marque la ligne « à synchroniser ».
+
+  Sens des dépendances :  presentation → domain ← data
+  (domain ne dépend de rien ; data et presentation dépendent de domain)
+
+
+5. RÔLE DE CHAQUE FONCTIONNALITÉ
+--------------------------------------------------------------------------------
+5.1 auth/  (Connexion / Inscription)
+  - Inscription : nom, e-mail, mot de passe (Supabase Auth hache les mots
+    de passe, rien n'est stocké en clair dans l'application).
+  - Connexion, déconnexion, mot de passe oublié.
+  - Suppression du compte ET de toutes les données (exigence CDC 6.3) :
+    serveur + base locale + rappels planifiés.
+  - authStateProvider : écouté par router.dart pour rediriger.
+  Écrans : login_screen, register_screen.
+
+5.2 dashboard/  (Accueil)
+  - Ne stocke rien : il AGRÈGE les données des autres features.
+  - Affiche : prises prévues aujourd'hui, confirmées, en attente, en
+    retard / non confirmées, verres bus / objectif, barre de progression.
+  - domain/services/daily_summary_calculator.dart : calcule le bilan du
+    jour (réutilisé par history/).
+  Écran : dashboard_screen.
+
+5.3 medications/  (Mes médicaments + Suivi des prises)
+  Entités :
+  - Medication : id, nom, dosage (« 500 mg »), quantitéParPrise (ex. 2
+    comprimés), unité, instructions (avant/après repas), dateDébut,
+    dateFin, actif.
+  - MedicationSchedule : une heure de prise (ex. 08:00). La FRÉQUENCE
+    n'est pas stockée : c'est le nombre d'horaires.
+  - IntakeLog : une prise enregistrée : medicationId, heurePrévue,
+    statut (pris | oublié), heureRéelle, quantitéPrise.
+  Règles (domain/services/intake_status_resolver.dart) :
+  - Statut affiché d'une prise prévue :
+      « Pris »            → IntakeLog statut pris (heureRéelle conservée,
+                            badge « en retard » si après le délai)
+      « Oublié »          → l'utilisateur l'a déclaré lui-même
+      « Non confirmée »   → heure passée, aucun log (JAMAIS « oubliée »
+                            automatiquement)
+      « En attente »      → prochaine prise
+      « À venir »         → plus tard dans la journée
+  - Compteur « 1 prise sur 3 » = prises confirmées / horaires du jour.
+  - Comprimés consommés = somme des quantitéPrise (distinct des prises).
+  - Après dateFin : plus aucun horaire généré → plus de rappel.
+  - Modifier / supprimer un médicament → reminder_scheduler replanifie.
+  Écrans : medication_list_screen (Mes médicaments),
+           medication_form_screen (ajout/modification),
+           intake_tracking_screen (Suivi du jour + « Confirmer la prise »).
+
+5.4 hydration/  (Hydratation)
+  Entités :
+  - WaterSettings : objectifVerres, mlParVerre, heureRéveil, heureCoucher,
+    rappelsActivés.
+  - WaterLog : un verre bu (date/heure, ml).
+  Règles (domain/services/water_reminder_planner.dart) :
+  - Rappels RÉPARTIS entre réveil et coucher (ex. 10h, 13h, 17h), jamais
+    « buvez beaucoup d'un coup ».
+  - Un rappel n'est affiché que si l'objectif intermédiaire n'est pas
+    atteint.
+  - Objectif atteint → message de réussite ; fin de journée sous
+    l'objectif → bilan « objectif non atteint ».
+  Écrans : hydration_screen (compteur « 3 / 5 » + « Ajouter un verre »),
+           hydration_setup_screen (premier paramétrage).
+
+5.5 hospitals/  (Carte)
+  - location_service : position de l'utilisateur (avec autorisation).
+  - remote/overpass_api.dart : récupère hôpitaux, cliniques et centres de
+    santé dans un rayon donné (requête Overpass sur les données OSM).
+  - local : met en cache le dernier résultat (carte utilisable hors ligne
+    avec les derniers établissements connus).
+  - Entité HealthFacility : nom, type, adresse, lat/lng, téléphone (si
+    disponible), distance calculée.
+  - Recherche par nom ou par lieu (filtre local + requête Overpass).
+  - Itinéraire / appel : url_launcher (ouvre Google Maps / OsmAnd / le
+    composeur téléphonique).
+  - Tuiles OSM : renseigner userAgentPackageName et l'attribution
+    « © OpenStreetMap contributors » ; pour une publication, prévoir un
+    fournisseur de tuiles dont les conditions le permettent.
+  - Afficher un avertissement : les informations peuvent être obsolètes.
+  Écrans : hospitals_map_screen, facility_detail_sheet (fiche en bas).
+
+5.6 history/  (Historique)
+  - Liste des jours passés avec leur bilan (réutilise
+    daily_summary_calculator du dashboard).
+  - Détail d'un jour : prises et verres.
+  - Évolution prévue : statistiques hebdomadaires / mensuelles.
+  Écrans : history_screen, day_detail_screen.
+
+5.7 settings/  (Paramètres)
+  - Profil (nom, e-mail), objectif d'eau, délai avant le 2e rappel,
+    alarme sonore oui/non.
+  - État des autorisations (notifications, alarmes exactes, localisation,
+    optimisation de batterie) avec explication et bouton pour les ouvrir.
+  - Déconnexion, suppression du compte.
+  Écran : settings_screen.
+
+
+6. SYSTÈME DE RAPPELS (point le plus sensible)
+--------------------------------------------------------------------------------
+  Fonctionnement :
+  1. reminder_scheduler calcule les rappels des prochains jours (fenêtre
+     glissante de 2 à 3 jours, pour rester sous la limite de notifications
+     planifiées du système).
+  2. Pour chaque prise prévue, il planifie :
+       - le rappel à l'heure exacte ;
+       - un 2e rappel à heure + délai (paramétrable, ex. 30 min) ;
+       - une alarme sonore si l'utilisateur l'a autorisée.
+  3. « Confirmer la prise » → enregistre l'IntakeLog ET annule le 2e
+     rappel et l'alarme de cette prise.
+  4. Le scheduler est relancé : au démarrage de l'appli, après chaque
+     modification de traitement ou d'objectif d'eau, chaque jour via
+     workmanager, et après un redémarrage du téléphone.
+  5. Une notification peut proposer les actions « Pris » / « Plus tard ».
+
+  Configuration Android requise (AndroidManifest.xml) :
+  - POST_NOTIFICATIONS (Android 13+)
+  - SCHEDULE_EXACT_ALARM / USE_EXACT_ALARM (heure exacte)
+  - RECEIVE_BOOT_COMPLETED (replanifier après redémarrage)
+  - ACCESS_FINE_LOCATION / ACCESS_COARSE_LOCATION (carte)
+  - INTERNET
+  Note : certaines marques (dont Realme/Oppo, le téléphone de test)
+  bloquent les applications en arrière-plan. Il faut guider l'utilisateur
+  pour désactiver l'optimisation de batterie de l'application.
+
+
+7. DONNÉES ET SYNCHRONISATION
+--------------------------------------------------------------------------------
+  Tables (identiques en local Drift et sur Supabase) :
+    profiles, medications, medication_schedules, intake_logs,
+    water_settings, water_logs
+  (+ hospitals_cache : uniquement en local)
+
+  Chaque ligne a : id (UUID généré sur le téléphone), user_id,
+  updated_at, deleted (suppression logique) et, en local, un indicateur
+  « à synchroniser ».
+
+  Supabase : Row Level Security activée sur toutes les tables avec la
+  règle « user_id = auth.uid() » → un utilisateur ne peut jamais lire
+  les données d'un autre.
+
+  Synchronisation : à l'ouverture, au retour du réseau et périodiquement :
+  envoi des lignes « à synchroniser », puis récupération des lignes
+  modifiées depuis la dernière synchro (la plus récente gagne).
+
+
+8. FLUX D'EXEMPLE : « Confirmer la prise »
+--------------------------------------------------------------------------------
+  intake_tracking_screen  (bouton)
+     → IntakeController.confirm(prise)                 [presentation]
+     → MedicationRepository.recordIntake(log)          [domain : contrat]
+     → MedicationRepositoryImpl                        [data]
+         ├─ écrit l'IntakeLog dans Drift (heure réelle)
+         ├─ NotificationService.cancelFollowUps(prise)
+         └─ SyncService.markDirty()
+     → Drift émet un Stream → les providers se mettent à jour
+     → le compteur « 2 prises sur 3 » et le tableau de bord se rafraîchissent
+
+
+9. ORDRE DE DÉVELOPPEMENT CONSEILLÉ (MVP)
+--------------------------------------------------------------------------------
+  1. Socle : dépendances, app/ (thème, router, barre de navigation), base Drift
+  2. medications/ (CRUD + suivi) — cœur de l'application, en local
+  3. core/notifications + reminder_scheduler — à tester tôt sur le vrai
+     téléphone
+  4. hydration/
+  5. dashboard/
+  6. hospitals/ (carte)
+  7. auth/ + Supabase + sync
+  8. history/ puis settings/
+  Les étapes 2 à 6 fonctionnent sans compte : l'authentification est
+  branchée ensuite, sans modifier les écrans.
