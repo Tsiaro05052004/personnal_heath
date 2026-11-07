@@ -15,7 +15,7 @@ _Rien pour l'instant._
 
 - [ ] Définir les fonctionnalités de l'application (suivi de quelles données de santé ?)
 - [ ] Choisir la gestion d'état, le stockage local et la navigation → noter dans `AGENTS.md` (section Architecture)
-- [ ] Initialiser le dépôt git
+- [x] Initialiser le dépôt git
 
 ## Décisions prises
 
@@ -31,3 +31,4 @@ _Aucun._
 
 ### 2026-11-07
 - Création de `AGENTS.md`, `CLAUDE.md`, `GEMINI.md` et `docs/progress.md`.
+- `git init` (branche `main`) + premier commit.

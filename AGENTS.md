@@ -11,7 +11,7 @@ The project is currently the unmodified `flutter create` template: `lib/main.dar
 - Dart SDK `^3.13.5`; only dependency beyond Flutter is `cupertino_icons`.
 - Lints: `flutter_lints` (`analysis_options.yaml`), with platform folders and `build/` excluded from analysis.
 - Platforms scaffolded: android, ios, linux, macos (no web/windows).
-- Not yet a git repository.
+- Git repository, default branch `main` (no remote yet).
 
 ## Commands
 
