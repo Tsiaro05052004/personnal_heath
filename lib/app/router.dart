@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/navigation/app_routes.dart';
+import '../features/auth/di/auth_providers.dart';
+import '../features/auth/presentation/screens/login_screen.dart';
+import '../features/auth/presentation/screens/password_reset_screen.dart';
+import '../features/auth/presentation/screens/register_screen.dart';
 import '../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../features/history/presentation/screens/history_screen.dart';
 import '../features/hospitals/presentation/screens/hospitals_map_screen.dart';
@@ -14,12 +18,40 @@ import '../features/medications/presentation/screens/medication_list_screen.dart
 import '../features/settings/presentation/screens/settings_screen.dart';
 import 'shell_scaffold.dart';
 
-/// Toutes les routes de l'application.
-/// À venir (étape 7) : redirection vers /connexion si non connecté.
+/// Toutes les routes de l'application. Connexion obligatoire (choix de
+/// l'utilisateur, 2026-11-08) : sans compte, toute page mène à /connexion ;
+/// une fois connecté, les pages de compte mènent à l'Accueil.
 final routerProvider = Provider<GoRouter>((ref) {
+  final authEnabled = ref.watch(authEnabledProvider);
+  // Recalcule la redirection à chaque connexion / déconnexion.
+  final authChanges = ValueNotifier<int>(0);
+  ref.listen(currentUserProvider, (_, _) => authChanges.value++);
+  ref.onDispose(authChanges.dispose);
+
   final router = GoRouter(
     initialLocation: AppRoutes.dashboard,
+    refreshListenable: authChanges,
+    redirect: (context, state) {
+      if (!authEnabled) return null;
+      final signedIn = ref.read(authRepositoryProvider).currentUser != null;
+      final onAuthPage = AppRoutes.authPages.contains(state.matchedLocation);
+      if (!signedIn && !onAuthPage) return AppRoutes.login;
+      if (signedIn && onAuthPage) return AppRoutes.dashboard;
+      return null;
+    },
     routes: [
+      GoRoute(
+        path: AppRoutes.login,
+        builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.register,
+        builder: (context, state) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.passwordReset,
+        builder: (context, state) => const PasswordResetScreen(),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => ShellScaffold(shell: shell),
         branches: [

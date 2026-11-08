@@ -9,6 +9,7 @@ import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/form_widgets.dart';
 import '../../../hospitals/domain/entities/location_result.dart';
 import '../viewmodels/settings_view_model.dart';
+import '../widgets/account_section.dart';
 
 /// Paramètres : rappels, autorisations du téléphone, eau, compte.
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -123,13 +124,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           // ---------------------------------------------------- Compte
           const FormQuestion('Compte'),
-          const AppCard(
-            child: Text(
-              'La connexion et la sauvegarde de vos données en ligne seront '
-              'bientôt disponibles. Pour l’instant, tout reste sur ce '
-              'téléphone.',
-            ),
-          ),
+          AccountSection(state: state, vm: vm),
 
           // ------------------------------------------------- À propos
           const FormQuestion('À propos'),
@@ -204,7 +199,8 @@ class _Permissions extends StatelessWidget {
           _PermissionRow(
             icon: Icons.my_location,
             title: 'Localisation',
-            granted: location == null || location == LocationProblem.unavailable,
+            granted:
+                location == null || location == LocationProblem.unavailable,
             missing: switch (location) {
               LocationProblem.serviceDisabled =>
                 'La localisation du téléphone est désactivée.',
@@ -302,7 +298,10 @@ class _BackgroundHelp extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.battery_alert_outlined, color: AppColors.primary),
+              const Icon(
+                Icons.battery_alert_outlined,
+                color: AppColors.primary,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(

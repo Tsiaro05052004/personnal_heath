@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/notifications/reminder_preferences.dart';
+import '../../../auth/di/auth_providers.dart';
+import '../../../auth/domain/entities/app_user.dart';
+import '../../../auth/domain/usecases/auth_usecases.dart';
 import '../../../hospitals/di/hospitals_providers.dart';
 import '../../../hospitals/domain/entities/location_result.dart';
 import '../../../medications/di/medications_providers.dart';
@@ -26,10 +29,19 @@ final _permissionsProvider = FutureProvider.autoDispose<PermissionsSnapshot>((
 });
 
 class SettingsUiState {
-  const SettingsUiState({required this.reminders, required this.permissions});
+  const SettingsUiState({
+    required this.reminders,
+    required this.permissions,
+    required this.accountsEnabled,
+    this.user,
+  });
 
   final ReminderPreferences reminders;
   final AsyncValue<PermissionsSnapshot> permissions;
+
+  /// L'appli est-elle reliée au serveur (comptes) ?
+  final bool accountsEnabled;
+  final AppUser? user;
 }
 
 final settingsViewModelProvider =
@@ -43,7 +55,26 @@ class SettingsViewModel extends Notifier<SettingsUiState> {
   SettingsUiState build() => SettingsUiState(
     reminders: ref.watch(reminderPreferencesProvider),
     permissions: ref.watch(_permissionsProvider),
+    accountsEnabled: ref.watch(authEnabledProvider),
+    user: ref.watch(currentUserProvider).value,
   );
+
+  /// Déconnexion. [force] : même si des données n'ont pas pu être
+  /// sauvegardées (l'utilisateur l'a confirmé). Après la déconnexion, le
+  /// routeur ouvre l'écran de connexion.
+  Future<SignOutResult> signOut({bool force = false}) =>
+      ref.read(signOutProvider)(force: force);
+
+  /// Supprime le compte et toutes les données. Renvoie false en cas
+  /// d'échec (hors connexion…).
+  Future<bool> deleteAccount() async {
+    try {
+      await ref.read(deleteAccountProvider)();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 
   Future<void> setAlarmSound(bool on) async {
     await ref.read(reminderPreferencesProvider.notifier).setAlarmSound(on);

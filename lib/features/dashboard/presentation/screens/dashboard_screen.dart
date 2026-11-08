@@ -29,8 +29,10 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       body: TabPage(
-        // Le prénom viendra du compte (étape 7).
-        title: 'Bonjour',
+        title: switch (state.displayName) {
+          final name? when name.isNotEmpty => 'Bonjour, $name',
+          _ => 'Bonjour',
+        },
         overline: Formatters.dayTitle(state.now),
         trailing: const ProfileButton(),
         children: [

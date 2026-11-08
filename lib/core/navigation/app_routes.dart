@@ -11,6 +11,12 @@ abstract final class AppRoutes {
   static const hospitals = '/hopitaux';
   static const history = '/historique';
 
+  // Compte (accessibles sans être connecté).
+  static const login = '/connexion';
+  static const register = '/inscription';
+  static const passwordReset = '/mot-de-passe-oublie';
+  static const authPages = {login, register, passwordReset};
+
   // Pages plein écran (sans barre du bas).
   static const settings = '/parametres';
   static const waterGoal = '/eau/objectif';

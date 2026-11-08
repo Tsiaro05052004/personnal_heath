@@ -8,6 +8,7 @@ import '../core/navigation/app_routes.dart';
 import '../core/notifications/notification_service.dart';
 import '../core/theme/app_theme.dart';
 import '../core/time/clock.dart';
+import '../features/auth/di/auth_providers.dart';
 import '../features/hydration/data/reminders/water_reminder_payload.dart';
 import '../features/hydration/di/hydration_providers.dart';
 import '../features/medications/data/reminders/reminder_payload.dart';
@@ -38,6 +39,8 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
       if (launch != null) _openTap(launch);
     });
     _reschedule();
+    // Sauvegarde / récupère les données (si connecté et en ligne).
+    ref.read(syncCoordinatorProvider)?.syncNow();
   }
 
   @override
@@ -53,6 +56,7 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
       // L'heure a pu beaucoup avancer pendant que l'appli dormait.
       ref.invalidate(clockProvider);
       _reschedule();
+      ref.read(syncCoordinatorProvider)?.syncNow();
     }
   }
 

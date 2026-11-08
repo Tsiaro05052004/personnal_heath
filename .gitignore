@@ -46,3 +46,6 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Configuration Supabase locale (adresse + clé publique) : voir supabase.example.json
+supabase.json

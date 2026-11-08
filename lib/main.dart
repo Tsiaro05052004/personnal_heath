@@ -4,6 +4,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/app.dart';
+import 'core/backend/supabase_config.dart';
 import 'core/notifications/local_notification_service.dart';
 import 'core/notifications/notification_service.dart';
 import 'core/preferences/preferences_store.dart';
@@ -14,7 +15,9 @@ Future<void> main() async {
   // Fuseau horaire + notifications (inactif sur ordinateur).
   final notifications = await LocalNotificationService.create();
   final preferences = await SharedPreferences.getInstance();
-  // À venir (étape 7) : Supabase.
+  // Comptes et sauvegarde en ligne, si l'appli a été compilée avec
+  // --dart-define-from-file=supabase.json (sinon : sans compte).
+  if (SupabaseConfig.isConfigured) await SupabaseConfig.initialize();
   runApp(
     ProviderScope(
       overrides: [

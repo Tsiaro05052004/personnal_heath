@@ -5,7 +5,7 @@ Journal partagé entre les sessions et les assistants (Claude Code, Codex, Gemin
 
 ## État actuel
 
-Étapes 1 à 6 et 8 faites : socle, médicaments, rappels + écran d'alarme, hydratation, accueil, carte des hôpitaux, historique et paramètres. Reste l'étape 7 (connexion + Supabase), en attente du projet Supabase. Design system des maquettes en place (couleurs, police Atkinson Hyperlegible, cartes, badges). Onglet Médicaments complet : liste du jour avec bandeau de dates, confirmation / « non pris », formulaire en 3 étapes (ajout, modification, suppression). Autres onglets : écrans provisoires au nouveau style. 119 tests.
+Toutes les étapes du MVP sont faites (1 à 8) : socle, médicaments, rappels + écran d'alarme, hydratation, accueil, carte des hôpitaux, connexion + Supabase + synchronisation, historique et paramètres. Design system des maquettes en place (couleurs, police Atkinson Hyperlegible, cartes, badges). Onglet Médicaments complet : liste du jour avec bandeau de dates, confirmation / « non pris », formulaire en 3 étapes (ajout, modification, suppression). Autres onglets : écrans provisoires au nouveau style. 140 tests.
 
 ## En cours
 
@@ -28,7 +28,12 @@ _Rien pour l'instant._
 - [x] Étape 6 : hôpitaux (maquette 6)
 - [x] Essayer la carte sur le Realme avec la localisation activée (validé par l'utilisateur)
 - [x] Étape 8 : historique (maquette 8) + paramètres (faite avant la 7)
-- [ ] Étape 7 : connexion (maquette 1) + Supabase + synchronisation — l'utilisateur crée le projet Supabase (adresse + clé « anon »)
+- [x] Étape 7 : connexion (maquette 1) + Supabase + synchronisation
+- [ ] Supabase : modèle d'e-mail « Reset Password » avec {{ .Token }} (code à 6 chiffres) — à faire par l'utilisateur
+- [ ] Essayer sur le Realme : inscription, connexion, sauvegarde, 2e téléphone ou réinstallation, mot de passe oublié, déconnexion, suppression du compte
+- [ ] À décider : désactiver la sauvegarde automatique Android (`allowBackup` non défini : base de santé et session incluses par défaut)
+- [ ] Mot de passe oublié : après un code valide, le routeur quitte l'écran avant le changement du mot de passe ; un refus du serveur à ce moment n'est pas affiché
+- [ ] Avant publication : identifiant d'appli définitif (pas com.example), réactiver « Confirm email », service d'envoi d'e-mails, fournisseur de tuiles de carte
 - [ ] Avant publication : fournisseur de tuiles de carte compatible avec un usage public
 - [ ] Tester l'onglet Médicaments sur le téléphone (`flutter run`)
 - [x] Initialiser le dépôt git
@@ -51,6 +56,9 @@ _Rien pour l'instant._
 | 2026-11-08 | Carte : OpenStreetMap (flutter_map) + API Overpass, cache local, recherche 5 puis 20 km | CDC 2.1 ; hors ligne avec la dernière liste |
 | 2026-11-08 | Tests et captures à 360 × 800 dp | Taille réelle du Realme (densité 3) : les écrans à 411 dp cachaient des débordements |
 | 2026-11-08 | Barre du bas sur mesure (AppNavigationBar) | NavigationBar coupait « Médicaments » sur deux lignes à 360 dp |
+| 2026-11-08 | Supabase confirmé (pas Firebase) ; connexion obligatoire | Choix de l'utilisateur |
+| 2026-11-08 | Mot de passe oublié par code à 6 chiffres | Pas de lien profond à gérer ; plus simple sur téléphone |
+| 2026-11-08 | Déconnexion = effacement des données du téléphone | Téléphone partagé : le suivant ne doit rien voir (données sauvegardées avant) |
 | 2026-11-08 | Étape 8 avant l'étape 7 | L'étape 7 attend un projet Supabase (choix de l'utilisateur) |
 | 2026-11-08 | Médicament supprimé gardé dans l'historique (deletedAt) | Un historique de santé ne doit pas perdre les prises passées |
 | 2026-11-08 | Réglages des rappels dans shared_preferences | Propres au téléphone, pas besoin de synchronisation |
@@ -59,6 +67,8 @@ _Rien pour l'instant._
 | 2026-11-07 | Onglets : Accueil, Médicaments, Eau, Carte, Historique ; Paramètres via l'icône ⚙ | 5 onglets maximum pour rester simple |
 
 ## Problèmes connus
+
+- Lancer l'appli AVEC le serveur : `flutter run --dart-define-from-file=supabase.json` (sinon, appli sans compte).
 
 - ~~Build Android échoue (JDK sans compilateur)~~ : résolu, JDK 21 installé et configuré (`flutter config --jdk-dir=/usr/lib/jvm/java-21-openjdk`).
 - Realme (ColorOS) retarde les alarmes « exactes » jusqu'à 1 h : résolu en planifiant en mode « réveil » (`AndroidScheduleMode.alarmClock`). Diagnostic : `adb shell dumpsys alarm` → `window=+1h` au lieu de `window=0`.
@@ -88,3 +98,5 @@ _Rien pour l'instant._
 - Étape 5 (branche `etape-5-accueil`) : feature `dashboard/` (DailySummaryCalculator, DashboardViewModel, carte « Prochaine prise », compteurs, liste « Aujourd'hui »). « Bonjour » sans prénom jusqu'à l'étape 7. Nouvelle règle d'architecture testée : entre features, seulement domain/, di/ et presentation/mappers/. Captures : badges coupés au milieu des mots et « Médicaments » sur deux lignes, corrigés. Outil de test `tapTab()` (les libellés d'onglets apparaissent aussi sur l'Accueil). 89 tests. Essayé sur le Realme : OK.
 - Étape 6 (branche `etape-6-hopitaux`) : feature `hospitals/` complète (Overpass, cache, GPS, carte, recherche, filtres, fiche, Itinéraire / Appeler), permissions Android (INTERNET, localisation) et <queries>. Sur le Realme : la carte s'affiche ; la localisation du téléphone était désactivée, l'explication s'affiche bien. Le Realme fait 360 dp de large (densité 3) : tests et captures passés à 360 × 800 dp, ce qui a révélé et fait corriger plusieurs débordements (barre du bas sur mesure, ligne « Confirmer », boutons de la fiche, filtres). Mention OpenStreetMap fixée en pied de fiche (toujours visible). Outils de test `scrollTo()` / `tapVisible()` qui font défiler la page. 105 tests.
 - Étape 8 (branche `etape-8-historique-parametres`) : historique (HistoryCalculator, semaine / mois, détail d'un jour, « en retard », médicaments supprimés gardés pour les jours d'avant) et paramètres (alarme sonore, délai du 2e rappel 15/30/60 min, autorisations, aide arrière-plan, lien objectif d'eau). shared_preferences ajouté. Correction a11y : compteurs fusionnés pour les lecteurs d'écran. 119 tests. Installé sur le Realme.
+- Étape 7 (branche `etape-7-connexion`) : projet Supabase créé par l'utilisateur, script SQL exécuté (vérifié : anon refusé partout, confirmation e-mail désactivée). Feature `auth/` (connexion, inscription, code de réinitialisation, déconnexion avec effacement local, suppression du compte), `core/sync` (récupérer puis envoyer, la plus récente gagne, clé naturelle des prises, un seul objectif d'eau), synchro automatique, « Bonjour, prénom », rubrique Compte. Bogue trouvé par les tests : ViewModel détruit pendant la connexion (vérifier `ref.mounted`). 135 tests, dont deux téléphones sur un même compte. APK construit avec supabase.json ; pas encore essayé sur le Realme.
+- Correctifs étape 7, trouvés en relisant le code réel (les faux serveurs des tests les masquaient) : (1) `order()` de Postgrest est décroissant par défaut en Dart → curseur bloqué sur la ligne la plus ancienne, mêmes lignes récupérées à chaque synchro, relance et replanification en boucle ; tri croissant explicite. (2) Curseurs conservés après l'effacement de la base → données absentes après déconnexion + reconnexion ; `forgetCursors` / `forgetProgress`. (3) Session fermée AVANT l'effacement (déconnexion, suppression du compte), et attente de la synchro en cours, pour ne pas re-télécharger les données effacées. 140 tests. Essai en debug sur le Realme avec le serveur Supabase : concluant d'après l'utilisateur (détail des parcours non précisé).

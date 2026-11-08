@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/time/clock.dart';
+import '../../../auth/di/auth_providers.dart';
 import '../../../hydration/di/hydration_providers.dart';
 import '../../../medications/di/medications_providers.dart';
 import '../../../medications/domain/entities/medication.dart';
@@ -11,9 +12,16 @@ import '../../domain/services/daily_summary_calculator.dart';
 
 /// Ce qu'affiche l'Accueil.
 class DashboardUiState {
-  const DashboardUiState({required this.now, required this.summary});
+  const DashboardUiState({
+    required this.now,
+    required this.summary,
+    this.displayName,
+  });
 
   final DateTime now;
+
+  /// Prénom du compte (« Bonjour, Hery »).
+  final String? displayName;
   final AsyncValue<DailySummary> summary;
 
   bool canConfirm(ScheduledIntake intake) =>
@@ -47,7 +55,11 @@ class DashboardViewModel extends Notifier<DashboardUiState> {
     } else {
       summary = const AsyncLoading();
     }
-    return DashboardUiState(now: now, summary: summary);
+    return DashboardUiState(
+      now: now,
+      summary: summary,
+      displayName: ref.watch(currentUserProvider).value?.displayName,
+    );
   }
 
   /// « Confirmer la prise ». Renvoie un message d'erreur, ou null.

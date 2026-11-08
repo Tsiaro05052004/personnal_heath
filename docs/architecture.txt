@@ -103,9 +103,13 @@ lib/
 │   ├── background/                 (pas encore) workmanager : replanifier
 │   │                               chaque jour même si l'appli n'est jamais
 │   │                               ouverte — voir section 7
+│   ├── backend/
+│   │   └── supabase_config.dart  Adresse + clé publique (--dart-define)
 │   ├── sync/
-│   │   └── sync_service.dart     Envoie les modifications locales vers
-│   │                             Supabase et récupère celles du serveur
+│   │   ├── sync_service.dart     Récupère puis envoie les modifications
+│   │   ├── sync_coordinator.dart Quand synchroniser
+│   │   ├── sync_remote.dart      Interface du serveur
+│   │   └── supabase_sync_remote.dart
 │   ├── navigation/
 │   │   ├── app_routes.dart       Chemins des pages (AppRoutes). Dans core/ et
 │   │   │                         non dans app/ : les écrans et widgets
@@ -271,14 +275,27 @@ Règle pratique : on ne crée un dossier que lorsqu'il contient un fichier
 
 6. RÔLE DE CHAQUE FONCTIONNALITÉ
 --------------------------------------------------------------------------------
-6.1 auth/  (Connexion / Inscription)
-  - Inscription : nom, e-mail, mot de passe (Supabase Auth hache les mots
-    de passe, rien n'est stocké en clair dans l'application).
-  - Connexion, déconnexion, mot de passe oublié.
-  - Suppression du compte ET de toutes les données (exigence CDC 6.3) :
-    serveur + base locale + rappels planifiés.
-  - authStateProvider (di/) : écouté par router.dart pour rediriger.
-  Écrans : login_screen, register_screen.
+6.1 auth/  (Connexion / Inscription)  — FAIT (étape 7)
+  - Connexion OBLIGATOIRE (choix de l'utilisateur, 2026-11-08) : le
+    routeur envoie vers /connexion tant qu'on n'est pas connecté ; la
+    session est gardée sur le téléphone (utilisable hors ligne ensuite).
+  - Domaine : AppUser, AuthFailure, AuthRepository, SessionData ; use cases
+    SignIn, SignUp (prénom → « Bonjour, … »), SendPasswordResetCode +
+    ResetPassword (code à 6 chiffres reçu par e-mail, pas de lien à
+    ouvrir), SignOut, DeleteAccount.
+  - À la connexion : les données saisies sur le téléphone sont rattachées
+    au compte (user_id) puis sauvegardées ; celles d'un autre téléphone
+    sont récupérées ; les rappels sont recalculés.
+  - Déconnexion : sauvegarde, puis effacement des données de santé du
+    téléphone (le suivant à se connecter ne voit rien) et arrêt des
+    rappels ; si des données n'ont pas pu partir (hors ligne), on demande
+    confirmation.
+  - Suppression du compte : RPC delete_my_account (tout part en cascade
+    sur le serveur), puis effacement local et arrêt des rappels.
+  - data/ : SupabaseAuthRepository (erreurs traduites), SessionDataImpl ;
+    NoBackendAuthRepository quand l'appli est compilée sans Supabase.
+  Écrans : login_screen (maquette 1), register_screen,
+           password_reset_screen ; rubrique Compte des Paramètres.
 
 6.2 dashboard/  (Accueil)  — FAIT (étape 5)
   - Ne stocke rien : il AGRÈGE dayPlanProvider (medications/di) et
@@ -534,27 +551,49 @@ Règle pratique : on ne crée un dossier que lorsqu'il contient un fichier
   pour désactiver l'optimisation de batterie de l'application.
 
 
-8. DONNÉES ET SYNCHRONISATION
+8. DONNÉES ET SYNCHRONISATION  — FAIT (étape 7)
 --------------------------------------------------------------------------------
-  Tables (identiques en local Drift et sur Supabase) :
-    profiles, medications, medication_schedules, intake_logs,
-    water_settings, water_logs
-  (+ hospitals_cache : uniquement en local)
+  Supabase (projet créé par l'utilisateur). Schéma :
+  supabase/migrations/20261108000000_schema_initial.sql (exécuté dans le
+  SQL Editor) : profiles, medications, medication_schedules, intake_logs,
+  water_settings, water_logs (+ hospitals_cache : uniquement en local).
 
-  Les classes de lignes Drift sont suffixées « Row » (MedicationRow,
-  IntakeLogRow…) pour ne pas se confondre avec les entités du domaine.
+  Configuration : adresse + clé PUBLIQUE dans supabase.json (hors git ;
+  modèle supabase.example.json), passées à la compilation :
+      flutter run --dart-define-from-file=supabase.json
+  Sans ce fichier, l'appli fonctionne sans compte (tests, ordinateur).
+  Jamais la clé service_role / secret dans l'appli.
 
-  Chaque ligne a : id (UUID généré sur le téléphone), user_id,
-  updated_at, deleted (suppression logique) et, en local, un indicateur
-  « à synchroniser ».
+  Chaque ligne a : id (UUID généré sur le téléphone), user_id, updated_at
+  (heure de modification sur le téléphone), deleted (suppression logique)
+  et, en local, dirty (« à synchroniser »). Côté serveur,
+  server_updated_at est posé par un déclencheur (le téléphone ne peut pas
+  le falsifier).
 
-  Supabase : Row Level Security activée sur toutes les tables avec la
-  règle « user_id = auth.uid() » → un utilisateur ne peut jamais lire
-  les données d'un autre.
+  Sécurité : RLS sur toutes les tables, « user_id = auth.uid() » ; le rôle
+  anon n'a accès à rien ; un horaire ou une prise ne peut viser qu'un
+  médicament du même compte (déclencheur) ; la requête de synchro filtre
+  aussi explicitement par user_id. Vérifié sur le projet : anon refusé
+  sur les tables et sur delete_my_account.
 
-  Synchronisation : à l'ouverture, au retour du réseau et périodiquement :
-  envoi des lignes « à synchroniser », puis récupération des lignes
-  modifiées depuis la dernière synchro (la plus récente gagne).
+  Synchronisation (core/sync) :
+  - SyncService : 1) récupère les lignes modifiées depuis le dernier
+    curseur (server_updated_at, gardé par compte et par table dans
+    shared_preferences) et les applique, sauf si la ligne locale est
+    « à synchroniser » et plus récente (la plus récente gagne) ;
+    2) envoie les lignes dirty (upsert), médicaments avant horaires et
+    prises. Cas particuliers : une seule réponse par prise prévue
+    (clé naturelle medication_id + scheduled_at) ; un seul objectif d'eau
+    actif par compte (le plus récent gagne, l'autre est supprimé).
+  - SyncCoordinator : synchronise 3 s après chaque modification locale, au
+    démarrage, au retour dans l'appli et à la connexion ; échec silencieux
+    hors ligne (on réessaie à la prochaine occasion) ; si des données sont
+    arrivées du serveur, les rappels sont recalculés.
+  - LocalDataAdmin (core/database) : rattacher les lignes au compte,
+    effacer les données de santé.
+  Limites : l'objectif d'eau et les horaires passés ne sont pas
+  historisés ; les e-mails par défaut de Supabase sont limités (prévoir un
+  service d'envoi avant publication).
 
 
 9. FLUX D'EXEMPLE : « Confirmer la prise »
@@ -584,7 +623,7 @@ Règle pratique : on ne crée un dossier que lorsqu'il contient un fichier
   4. hydration/ (maquette 5) — FAIT
   5. dashboard/ (maquette 2) — FAIT
   6. hospitals/ (maquette 6) — FAIT
-  7. auth/ (maquette 1) + Supabase + sync
+  7. auth/ (maquette 1) + Supabase + sync — FAIT
   8. history/ (maquette 8) puis settings/ — FAIT (avant l'étape 7, en
      attendant le projet Supabase)
   Les étapes 2 à 6 fonctionnent sans compte : l'authentification est

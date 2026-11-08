@@ -10,10 +10,12 @@ import 'package:personnal_heath/core/database/app_database.dart';
 import 'package:personnal_heath/core/navigation/external_launcher.dart';
 import 'package:personnal_heath/core/preferences/preferences_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:personnal_heath/features/auth/di/auth_providers.dart';
 import 'package:personnal_heath/features/hospitals/di/hospitals_providers.dart';
 import 'package:personnal_heath/core/notifications/notification_service.dart';
 import 'package:personnal_heath/core/time/clock.dart';
 
+import 'fake_backend.dart';
 import 'fake_hospitals.dart';
 import 'fake_notification_service.dart';
 
@@ -31,6 +33,8 @@ Future<AppDatabase> pumpApp(
   FakeOverpass? overpass,
   FakeLauncher? launcher,
   Map<String, Object> preferences = const {},
+  FakeAuthRepository? auth,
+  FakeSyncRemote? syncRemote,
 }) async {
   SharedPreferences.setMockInitialValues(preferences);
   final prefs = (await tester.runAsync(SharedPreferences.getInstance))!;
@@ -66,6 +70,10 @@ Future<AppDatabase> pumpApp(
         mapTilesEnabledProvider.overrideWithValue(false),
         externalLauncherProvider.overrideWithValue(launcher ?? FakeLauncher()),
         sharedPreferencesProvider.overrideWithValue(prefs),
+        // Comptes : désactivés sauf si le test fournit un faux service.
+        authEnabledProvider.overrideWithValue(auth != null),
+        if (auth != null) authRepositoryProvider.overrideWithValue(auth),
+        syncRemoteProvider.overrideWithValue(syncRemote),
       ],
       child: const App(),
     ),
