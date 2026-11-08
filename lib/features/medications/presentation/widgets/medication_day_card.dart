@@ -140,15 +140,17 @@ class _IntakeRow extends StatelessWidget {
             child: Row(
               children: [
                 SizedBox(
-                  width: 76,
+                  width: 72,
                   child: Text(
                     DoseLabels.hour(intake.scheduledAt),
                     style: text.titleMedium,
                   ),
                 ),
-                if (icon != null) ...[
+                // Avec le bouton « Confirmer », le fond orange suffit :
+                // l'icône prendrait la place qui manque sur 360 dp.
+                if (icon != null && !(canConfirm && highlighted)) ...[
                   Icon(icon, size: 22, color: statusColor),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 4),
                 ],
                 Expanded(
                   child: Text(
@@ -166,7 +168,8 @@ class _IntakeRow extends StatelessWidget {
                     onPressed: onConfirm,
                     style: FilledButton.styleFrom(
                       minimumSize: const Size(0, 52),
-                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      textStyle: text.labelLarge?.copyWith(fontSize: 18),
                     ),
                     child: const Text('Confirmer'),
                   ),

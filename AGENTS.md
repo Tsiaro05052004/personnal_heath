@@ -6,7 +6,7 @@ Shared instructions for AI coding agents (Claude Code, Codex, Gemini) working in
 
 Flutter app `personnal_heath` (personal health tracker — note the package name keeps the "heath" spelling; don't "fix" it in imports, it would break `package:personnal_heath/...`).
 
-Steps 1 (foundation), 2 (`medications/`: CRUD + daily intake tracking) 3 (reminders: scheduled notifications + full-screen alarm screen) 4 (`hydration/`: water goal, glass counter, spread water reminders) and 5 (`dashboard/`: home summary) are done; the other tabs are placeholders. UI follows the mockups in `docs/Maquettes app santé.pdf` (8 screens; open it before building a screen). See `docs/progress.md` for the current step.
+Steps 1 (foundation), 2 (`medications/`: CRUD + daily intake tracking) 3 (reminders: scheduled notifications + full-screen alarm screen) 4 (`hydration/`: water goal, glass counter, spread water reminders) 5 (`dashboard/`: home summary) and 6 (`hospitals/`: OSM map, Overpass, cache, GPS) are done; the other tabs are placeholders. UI follows the mockups in `docs/Maquettes app santé.pdf` (8 screens; open it before building a screen). See `docs/progress.md` for the current step.
 
 - Dart SDK `^3.13.5`; main deps: flutter_riverpod 3, go_router, drift + drift_flutter, intl, uuid.
 - Lints: `flutter_lints` (`analysis_options.yaml`), with platform folders and `build/` excluded from analysis.
@@ -69,7 +69,8 @@ flutter build apk --debug                    # Android build (JDK 21 configured 
 - Reminders (section 7 of the doc): `ReminderPlanner` (pure rules) → `ReminderGateway` (domain interface) → `NotificationReminderGateway` (data) → `NotificationService` (`lib/core/notifications/`, the only code touching flutter_local_notifications). 14-day rolling window rebuilt on app start/resume and after any treatment change; confirming / marking missed cancels that intake's reminders. Notification taps open `/alarme` (`IntakeAlarmScreen`). Alarm sound is on by default (`alarmSoundEnabledProvider`, separate `alarme_medicaments` channel: alarm ringtone, insistent, 5 min max); Android channel sound can't change after creation, so a new sound needs a new channel id. Keep flutter_local_notifications on 22.x (23 needs compileSdk 37, not resolvable with the installed SDK).
 - Shared form widgets (`FormQuestion`, `ChoiceButton`, `QuantityStepper`…) live in `lib/core/widgets/form_widgets.dart`; across features import only `domain/`, `di/` or `presentation/mappers/` (enforced by the architecture test). Cross-feature data goes through `di/` providers (`dayPlanProvider`, `waterDayProvider`).
 - Each feature's reminder gateway only touches notifications whose payload `type` is its own (`prise`, `eau`).
-- Widget tests: switch tabs with `tapTab(tester, 'Eau')` (tab labels also appear on the home screen).
+- The test phone (Realme RMX2111) is **360 × 800 dp** (density 3); `pumpApp` uses that size — design for it. The bottom bar is a custom `AppNavigationBar` (`lib/app/shell_scaffold.dart`), not Material's `NavigationBar`.
+- Widget tests: switch tabs with `tapTab(tester, 'Eau')` (tab labels also appear on the home screen); use `tapVisible` / `scrollTo` for anything that may be below the fold. `pumpApp` also fakes GPS (`FakeLocationGateway`), Overpass (`FakeOverpass`, via http `MockClient`), map tiles (off) and `ExternalLauncher`.
 - Widget tests: override `notificationServiceProvider` with `FakeNotificationService` (done by `pumpApp`), and use `settle(tester)` instead of bare `pumpAndSettle` after actions that hit the DB — Drift needs real time, not fake time.
 
 ## Working notes

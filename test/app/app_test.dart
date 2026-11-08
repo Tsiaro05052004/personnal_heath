@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:personnal_heath/app/shell_scaffold.dart';
 
 import '../helpers/pump_app.dart';
 
@@ -17,7 +17,7 @@ void main() {
     ]) {
       expect(
         find.descendant(
-          of: find.byType(NavigationBar),
+          of: find.byType(AppNavigationBar),
           matching: find.text(label),
         ),
         findsOneWidget,
@@ -43,6 +43,6 @@ void main() {
     await tester.tap(find.byTooltip('Profil et paramètres'));
     await tester.pumpAndSettle();
     expect(find.text('Paramètres'), findsWidgets);
-    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byType(AppNavigationBar), findsNothing);
   });
 }

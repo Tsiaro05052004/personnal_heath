@@ -36,6 +36,7 @@ void main() {
     expect(find.bySemanticsLabel('Eau : 3 sur 5 verres'), findsOneWidget);
 
     // Liste « Aujourd'hui ».
+    await scrollTo(tester, find.text('À venir'));
     expect(find.text("Aujourd'hui"), findsOneWidget);
     expect(find.text('Tout voir'), findsOneWidget);
     expect(find.text('Pris'), findsOneWidget);
@@ -85,6 +86,7 @@ void main() {
 
     expect(find.text("Plus de prise prévue aujourd'hui"), findsOneWidget);
     expect(find.text('2 prises n’ont pas été confirmées.'), findsOneWidget);
+    await scrollTo(tester, find.text('20h00'));
     expect(find.text('Non confirmée'), findsNWidgets(2));
 
     await tapVisible(tester, find.text('Voir mes prises'));

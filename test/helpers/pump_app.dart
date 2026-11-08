@@ -3,12 +3,16 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:personnal_heath/app/shell_scaffold.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:personnal_heath/app/app.dart';
 import 'package:personnal_heath/core/database/app_database.dart';
+import 'package:personnal_heath/core/navigation/external_launcher.dart';
+import 'package:personnal_heath/features/hospitals/di/hospitals_providers.dart';
 import 'package:personnal_heath/core/notifications/notification_service.dart';
 import 'package:personnal_heath/core/time/clock.dart';
 
+import 'fake_hospitals.dart';
 import 'fake_notification_service.dart';
 
 /// « Maintenant » dans les tests : dimanche 8 novembre 2026, 14h10.
@@ -21,6 +25,9 @@ Future<AppDatabase> pumpApp(
   DateTime? now,
   Future<void> Function(AppDatabase db)? seed,
   FakeNotificationService? notifications,
+  FakeLocationGateway? location,
+  FakeOverpass? overpass,
+  FakeLauncher? launcher,
 }) async {
   await initializeDateFormatting('fr_FR');
   // closeStreamsSynchronously : sinon Drift ferme ses flux avec une minuterie
@@ -33,9 +40,10 @@ Future<AppDatabase> pumpApp(
   );
   addTearDown(db.close);
   if (seed != null) await tester.runAsync(() => seed(db));
-  // Écran haut comme un téléphone, pour que les listes tiennent.
+  // Écran du Realme de test : 1080 × 2400 px à densité 3, soit
+  // 360 × 800 dp (un petit écran : ce qui tient ici tient partout).
   tester.view.physicalSize = const Size(1080, 2400);
-  tester.view.devicePixelRatio = 2.6;
+  tester.view.devicePixelRatio = 3.0;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     ProviderScope(
@@ -45,6 +53,13 @@ Future<AppDatabase> pumpApp(
         notificationServiceProvider.overrideWithValue(
           notifications ?? FakeNotificationService(),
         ),
+        // Ni GPS, ni réseau, ni autre application dans les tests.
+        locationGatewayProvider.overrideWithValue(
+          location ?? FakeLocationGateway(),
+        ),
+        overpassApiProvider.overrideWithValue((overpass ?? FakeOverpass()).api),
+        mapTilesEnabledProvider.overrideWithValue(false),
+        externalLauncherProvider.overrideWithValue(launcher ?? FakeLauncher()),
       ],
       child: const App(),
     ),
@@ -74,7 +89,27 @@ Future<void> settle(WidgetTester tester) async {
 /// ailleurs, ex. « Médicaments » sur l'Accueil).
 Future<void> tapTab(WidgetTester tester, String label) async {
   await tester.tap(
-    find.descendant(of: find.byType(NavigationBar), matching: find.text(label)),
+    find.descendant(
+      of: find.byType(AppNavigationBar),
+      matching: find.text(label),
+    ),
   );
+  await settle(tester);
+}
+
+/// Fait défiler la page (liste verticale principale) jusqu'à [finder] :
+/// sur un écran de 800 dp, le bas des pages n'est pas encore construit.
+/// Cherche d'abord vers le bas, puis vers le haut.
+Future<void> scrollTo(WidgetTester tester, Finder finder) async {
+  final page = find
+      .byWidgetPredicate(
+        (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
+      )
+      .first;
+  try {
+    await tester.scrollUntilVisible(finder, 200, scrollable: page);
+  } on StateError {
+    await tester.scrollUntilVisible(finder, -200, scrollable: page);
+  }
   await settle(tester);
 }

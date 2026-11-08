@@ -5,7 +5,7 @@ Journal partagé entre les sessions et les assistants (Claude Code, Codex, Gemin
 
 ## État actuel
 
-Étapes 1 (socle), 2 (médicaments), 3 (rappels + écran d'alarme), 4 (hydratation) et 5 (accueil) faites. Design system des maquettes en place (couleurs, police Atkinson Hyperlegible, cartes, badges). Onglet Médicaments complet : liste du jour avec bandeau de dates, confirmation / « non pris », formulaire en 3 étapes (ajout, modification, suppression). Autres onglets : écrans provisoires au nouveau style. 89 tests.
+Étapes 1 à 6 faites : socle, médicaments, rappels + écran d'alarme, hydratation, accueil, carte des hôpitaux. Design system des maquettes en place (couleurs, police Atkinson Hyperlegible, cartes, badges). Onglet Médicaments complet : liste du jour avec bandeau de dates, confirmation / « non pris », formulaire en 3 étapes (ajout, modification, suppression). Autres onglets : écrans provisoires au nouveau style. 105 tests.
 
 ## En cours
 
@@ -25,7 +25,10 @@ _Rien pour l'instant._
 - [x] Étape 4 : hydratation (maquette 5)
 - [x] Essayer l'onglet Eau sur le Realme (objectif, verres, rappels d'eau)
 - [x] Étape 5 : accueil (maquette 2)
-- [ ] Étape 6 : hôpitaux (maquette 6) · Étape 7 : connexion (maquette 1) + Supabase · Étape 8 : historique (maquette 8) + paramètres
+- [x] Étape 6 : hôpitaux (maquette 6)
+- [x] Essayer la carte sur le Realme avec la localisation activée (validé par l'utilisateur)
+- [ ] Étape 7 : connexion (maquette 1) + Supabase · Étape 8 : historique (maquette 8) + paramètres
+- [ ] Avant publication : fournisseur de tuiles de carte compatible avec un usage public
 - [ ] Tester l'onglet Médicaments sur le téléphone (`flutter run`)
 - [x] Initialiser le dépôt git
 
@@ -44,6 +47,9 @@ _Rien pour l'instant._
 | 2026-11-08 | Rappels en mode « réveil » (setAlarmClock) | Seul mode non retardé par ColorOS ; icône de réveil dans la barre d'état |
 | 2026-11-08 | Alarme sonore activée par défaut (sonnerie de réveil répétée, 5 min max) | Choix de l'utilisateur ; interrupteur prévu à l'étape 8 |
 | 2026-11-08 | Rappels d'eau : 8/jour max avec objectif intermédiaire, bilan 30 min avant le coucher, simple notification | CDC 2.3 C : encourager à boire régulièrement, jamais beaucoup d'un coup |
+| 2026-11-08 | Carte : OpenStreetMap (flutter_map) + API Overpass, cache local, recherche 5 puis 20 km | CDC 2.1 ; hors ligne avec la dernière liste |
+| 2026-11-08 | Tests et captures à 360 × 800 dp | Taille réelle du Realme (densité 3) : les écrans à 411 dp cachaient des débordements |
+| 2026-11-08 | Barre du bas sur mesure (AppNavigationBar) | NavigationBar coupait « Médicaments » sur deux lignes à 360 dp |
 | 2026-11-08 | Workmanager reporté | Chaque rappel touché rouvre l'appli et prolonge la fenêtre ; à réévaluer après essai sur téléphone |
 | 2026-11-08 | Clean Architecture stricte (use cases, mappers, `di/`) + MVVM (ViewModel `Notifier` + `UiState` immuable par écran) | Demande de l'utilisateur ; règles vérifiées par `test/architecture/dependency_rules_test.dart` |
 | 2026-11-07 | Onglets : Accueil, Médicaments, Eau, Carte, Historique ; Paramètres via l'icône ⚙ | 5 onglets maximum pour rester simple |
@@ -76,3 +82,4 @@ _Rien pour l'instant._
 - Alarme sonore (demande de l'utilisateur : le rappel s'affichait sans sonner) : canal « alarme_medicaments » (sonnerie de réveil, USAGE_ALARM, répétition, 5 min max). Vérifié sur le Realme : à 13h05 Android a ouvert l'écran d'alarme de lui-même, ce qui coupait la sonnerie dans la seconde → la sonnerie ne s'arrête plus à l'ouverture de l'écran, seulement sur une réponse ou en le quittant. 63 tests.
 - Étape 4 (branche `etape-4-hydratation`) : feature `hydration/` complète (domaine, data, di, ViewModels, écrans « Mon eau du jour » et « Mon objectif d'eau »), rappels d'eau sur le canal « rappels_eau », toucher → onglet Eau, replanification au démarrage/retour (médicaments puis eau). Éléments de formulaire déplacés dans `core/widgets/form_widgets.dart` (partagés). `settle()` des tests rendu robuste aux indicateurs de chargement. 89 tests. Essayé sur le Realme : objectif, verres, rappels d'eau OK.
 - Étape 5 (branche `etape-5-accueil`) : feature `dashboard/` (DailySummaryCalculator, DashboardViewModel, carte « Prochaine prise », compteurs, liste « Aujourd'hui »). « Bonjour » sans prénom jusqu'à l'étape 7. Nouvelle règle d'architecture testée : entre features, seulement domain/, di/ et presentation/mappers/. Captures : badges coupés au milieu des mots et « Médicaments » sur deux lignes, corrigés. Outil de test `tapTab()` (les libellés d'onglets apparaissent aussi sur l'Accueil). 89 tests. Essayé sur le Realme : OK.
+- Étape 6 (branche `etape-6-hopitaux`) : feature `hospitals/` complète (Overpass, cache, GPS, carte, recherche, filtres, fiche, Itinéraire / Appeler), permissions Android (INTERNET, localisation) et <queries>. Sur le Realme : la carte s'affiche ; la localisation du téléphone était désactivée, l'explication s'affiche bien. Le Realme fait 360 dp de large (densité 3) : tests et captures passés à 360 × 800 dp, ce qui a révélé et fait corriger plusieurs débordements (barre du bas sur mesure, ligne « Confirmer », boutons de la fiche, filtres). Mention OpenStreetMap fixée en pied de fiche (toujours visible). Outils de test `scrollTo()` / `tapVisible()` qui font défiler la page. 105 tests.

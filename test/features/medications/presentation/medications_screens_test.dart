@@ -41,6 +41,8 @@ Future<void> openMedicationsTab(WidgetTester tester) async {
 }
 
 Future<void> tapVisible(WidgetTester tester, Finder finder) async {
+  // Pas encore construit (plus bas ou plus haut dans la page) : on y va.
+  if (finder.evaluate().isEmpty) await scrollTo(tester, finder);
   await tester.ensureVisible(finder);
   await tester.pumpAndSettle();
   await tester.tap(finder);
@@ -108,8 +110,10 @@ void main() {
 
     // Le nom est obligatoire.
     await tapVisible(tester, find.text('Continuer'));
+    await scrollTo(tester, find.text('Écrivez le nom du médicament.'));
     expect(find.text('Écrivez le nom du médicament.'), findsOneWidget);
 
+    await scrollTo(tester, find.text('Nom du médicament'));
     await tester.enterText(find.byType(TextField).at(0), 'Doliprane');
     await tester.enterText(find.byType(TextField).at(1), '1 g');
     await tapVisible(tester, find.text('Continuer'));

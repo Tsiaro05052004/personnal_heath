@@ -79,9 +79,10 @@ lib/
 │   ├── router.dart               Toutes les routes go_router + redirection
 │   │                             vers /login si l'utilisateur n'est pas connecté
 │   │                             (seul endroit qui connaît tous les écrans)
-│   └── shell_scaffold.dart       Barre de navigation du bas (5 onglets :
-│                                 Accueil, Médicaments, Eau, Hôpitaux,
-│                                 Historique)
+│   └── shell_scaffold.dart       Barre de navigation du bas sur mesure
+│                                 (AppNavigationBar, 5 onglets : Accueil,
+│                                 Médicaments, Eau, Hôpitaux, Historique ;
+│                                 libellés sur une ligne même à 360 dp)
 │
 ├── core/                         CODE TRANSVERSAL (utilisé par plusieurs features)
 │   ├── database/
@@ -106,9 +107,10 @@ lib/
 │   │   └── sync_service.dart     Envoie les modifications locales vers
 │   │                             Supabase et récupère celles du serveur
 │   ├── navigation/
-│   │   └── app_routes.dart       Chemins des pages (AppRoutes). Dans core/ et
-│   │                             non dans app/ : les écrans et widgets
-│   │                             partagés naviguent sans dépendre de app/
+│   │   ├── app_routes.dart       Chemins des pages (AppRoutes). Dans core/ et
+│   │   │                         non dans app/ : les écrans et widgets
+│   │   │                         partagés naviguent sans dépendre de app/
+│   │   └── external_launcher.dart  Ouvrir le GPS, le téléphone (url_launcher)
 │   ├── theme/
 │   │   ├── app_colors.dart       Couleurs relevées sur les maquettes
 │   │   └── app_theme.dart        Thème : police Atkinson Hyperlegible
@@ -119,8 +121,6 @@ lib/
 │   │   └── clock.dart            clockProvider : heure actuelle rafraîchie
 │   │                             chaque minute. Les ViewModels ne lisent
 │   │                             JAMAIS DateTime.now() (tests : FixedClock)
-│   ├── location/
-│   │   └── location_service.dart Permission + position actuelle + distance
 │   ├── permissions/
 │   │   └── permission_service.dart  Demande et explique les autorisations
 │   ├── utils/
@@ -376,22 +376,41 @@ Règle pratique : on ne crée un dossier que lorsqu'il contient un fichier
   félicitations ; carte « Définissez votre objectif » au premier
   lancement), water_goal_screen (/eau/objectif).
 
-6.5 hospitals/  (Carte)
-  - location_service : position de l'utilisateur (avec autorisation).
-  - remote/overpass_api.dart : récupère hôpitaux, cliniques et centres de
-    santé dans un rayon donné (requête Overpass sur les données OSM).
-  - local : met en cache le dernier résultat (carte utilisable hors ligne
-    avec les derniers établissements connus).
-  - Entité HealthFacility : nom, type, adresse, lat/lng, téléphone (si
-    disponible), distance calculée.
-  - Recherche par nom ou par lieu (filtre local + requête Overpass).
-  - Itinéraire / appel : url_launcher (ouvre Google Maps / OsmAnd / le
-    composeur téléphonique).
-  - Tuiles OSM : renseigner userAgentPackageName et l'attribution
-    « © OpenStreetMap contributors » ; pour une publication, prévoir un
-    fournisseur de tuiles dont les conditions le permettent.
-  - Afficher un avertissement : les informations peuvent être obsolètes.
-  Écrans : hospitals_map_screen, facility_detail_sheet (fiche en bas).
+6.5 hospitals/  (Carte)  — FAIT (étape 6)
+  Domaine : GeoPoint, HealthFacility (+ FacilityType : hôpital public,
+  hôpital, clinique, centre de santé, cabinet), NearbyFacility (distance),
+  NearbySearch (frais ou cache), LocationResult (+ LocationProblem).
+  Services : Geo (distance de haversine), FacilitySearch (filtres Tous /
+  Hôpitaux / Cliniques, recherche par nom ou adresse sans accents ni
+  majuscules, tri par distance).
+  Interfaces : FacilityRepository, LocationGateway.
+  Use cases : FindNearbyFacilities (5 km, puis 20 km si moins de 3
+  résultats), GetCachedFacilities.
+  Data :
+  - remote/overpass_api.dart : API Overpass (amenity hospital|clinic|doctors,
+    healthcare hospital|clinic|centre|doctor, « out center tags »),
+    User-Agent générique sans donnée personnelle ; OverpassMapper (nœuds et
+    bâtiments, établissements sans nom ignorés, public/privé via
+    operator:type, adresse, premier téléphone).
+  - local/facility_cache.dart : table hospitals_cache remplacée à chaque
+    recherche réussie ; hors connexion → dernière liste (fromCache).
+  - location/geolocator_location_gateway.dart : geolocator ; la position
+    n'est ni enregistrée ni partagée. (La localisation n'est utilisée que
+    par cette feature : pas de core/location.)
+  Présentation (maquette 6) : carte flutter_map + tuiles OSM, recherche,
+  filtres (défilent horizontalement), marqueurs (choisi en vert), bouton
+  « Me localiser », fiche du bas (DraggableScrollableSheet) : type, nom,
+  adresse · distance, « Itinéraire » (geo:, sinon lien Google Maps) et
+  « Appeler » (tel: → composeur, pas d'appel direct), autres
+  établissements proches ; mention « Données © contributeurs
+  OpenStreetMap… » toujours visible (pied de fiche). Autorisation de
+  localisation demandée par un bouton après explication ; cas
+  « refusée définitivement » et « localisation désactivée » → réglages.
+  core/navigation/external_launcher.dart : ouverture d'autres applis
+  (remplacée dans les tests).
+  Tuiles : tile.openstreetmap.org convient au développement ; pour une
+  publication, prendre un fournisseur dont les conditions le permettent
+  (politique d'usage des tuiles OSM).
 
 6.6 history/  (Historique)
   - Liste des jours passés avec leur bilan (réutilise
@@ -489,7 +508,9 @@ Règle pratique : on ne crée un dossier que lorsqu'il contient un fichier
   - Gradle : désucrage Java (desugar_jdk_libs), compileSdk ≥ 36
     (flutter_local_notifications 22 ; la 23 exige compileSdk 37)
   - ACCESS_FINE_LOCATION / ACCESS_COARSE_LOCATION (carte)
-  - INTERNET
+  - INTERNET (déclarée dans le manifeste principal : sans elle, la version
+    « release » n'aurait pas de réseau)
+  - <queries> : geo:, https: (itinéraire) et tel: (composeur)
   Note : certaines marques (dont Realme/Oppo, le téléphone de test)
   bloquent les applications en arrière-plan. Il faut guider l'utilisateur
   pour désactiver l'optimisation de batterie de l'application.
@@ -544,7 +565,7 @@ Règle pratique : on ne crée un dossier que lorsqu'il contient un fichier
      à tester sur le vrai téléphone (workmanager reporté)
   4. hydration/ (maquette 5) — FAIT
   5. dashboard/ (maquette 2) — FAIT
-  6. hospitals/ (maquette 6)
+  6. hospitals/ (maquette 6) — FAIT
   7. auth/ (maquette 1) + Supabase + sync
   8. history/ (maquette 8) puis settings/
   Les étapes 2 à 6 fonctionnent sans compte : l'authentification est

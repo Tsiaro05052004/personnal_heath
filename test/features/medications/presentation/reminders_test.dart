@@ -93,6 +93,7 @@ void main() {
     expect(find.text('500 mg'), findsOneWidget);
     expect(find.text('Prendre 1 comprimé'), findsOneWidget);
     expect(find.text('Après le repas'), findsOneWidget);
+    await scrollTo(tester, find.textContaining('Ne doublez jamais'));
     expect(find.textContaining('Ne doublez jamais'), findsOneWidget);
   });
 

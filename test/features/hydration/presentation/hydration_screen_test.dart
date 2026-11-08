@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:personnal_heath/app/shell_scaffold.dart';
 import 'package:personnal_heath/core/database/app_database.dart';
 import 'package:personnal_heath/core/notifications/notification_service.dart';
 import 'package:personnal_heath/features/hydration/data/datasources/local/water_local_data_source.dart';
@@ -61,6 +61,7 @@ void main() {
     expect(find.text("J'ai bu un verre"), findsOneWidget);
     expect(find.text('Annuler le dernier verre'), findsOneWidget);
     // 14h30 (objectif 3) est atteint : le prochain rappel est à 17h00.
+    await scrollTo(tester, find.text('Prochain rappel à 17h00'));
     expect(find.text('Prochain rappel à 17h00'), findsOneWidget);
   });
 
@@ -119,6 +120,6 @@ void main() {
     await settle(tester);
 
     expect(find.text('Mon eau du jour'), findsOneWidget);
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(AppNavigationBar), findsOneWidget);
   });
 }
