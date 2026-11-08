@@ -43,10 +43,15 @@ class StatusBadge extends StatelessWidget {
             Icon(icon, size: 18, color: tone.foreground),
             const SizedBox(width: 6),
           ],
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodyMedium
-                ?.copyWith(color: tone.foreground, fontWeight: FontWeight.w700),
+          // Flexible : passe à la ligne si la place manque (grand texte).
+          Flexible(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: tone.foreground,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ],
       ),

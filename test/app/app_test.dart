@@ -15,19 +15,23 @@ void main() {
       'Hôpitaux',
       'Historique',
     ]) {
-      expect(find.text(label), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text(label),
+        ),
+        findsOneWidget,
+      );
     }
   });
 
   testWidgets('la barre du bas change de page', (tester) async {
     await pumpApp(tester);
 
-    await tester.tap(find.text('Médicaments'));
-    await tester.pumpAndSettle();
+    await tapTab(tester, 'Médicaments');
     expect(find.text('Mes médicaments'), findsOneWidget);
 
-    await tester.tap(find.text('Eau'));
-    await tester.pumpAndSettle();
+    await tapTab(tester, 'Eau');
     expect(find.text('Mon eau du jour'), findsOneWidget);
   });
 

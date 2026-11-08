@@ -23,8 +23,7 @@ Future<void> Function(AppDatabase) seedWater(int glasses) => (db) async {
 };
 
 Future<void> openWaterTab(WidgetTester tester) async {
-  await tester.tap(find.text('Eau'));
-  await settle(tester);
+  await tapTab(tester, 'Eau');
 }
 
 List<ScheduledNotification> waterNotifications(FakeNotificationService s) =>

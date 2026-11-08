@@ -106,4 +106,19 @@ void main() {
       isEmpty,
     );
   });
+  test('entre features : seulement domain/, di/ et les libellés', () {
+    final feature = RegExp(r'^features/([^/]+)/');
+    final allowed = RegExp(
+      r'^features/[^/]+/(domain/|di/|presentation/mappers/)',
+    );
+    final bad = [
+      for (final file in files)
+        if (feature.firstMatch(rel(file.uri)) case final from?)
+          for (final import in importsOf(file))
+            if (feature.firstMatch(import) case final to?)
+              if (to.group(1) != from.group(1) && !allowed.hasMatch(import))
+                '${rel(file.uri)} → $import',
+    ];
+    expect(bad, isEmpty);
+  });
 }

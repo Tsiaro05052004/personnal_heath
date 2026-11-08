@@ -37,8 +37,7 @@ Future<void> seedParacetamol(AppDatabase db) async {
 }
 
 Future<void> openMedicationsTab(WidgetTester tester) async {
-  await tester.tap(find.text('Médicaments'));
-  await tester.pumpAndSettle();
+  await tapTab(tester, 'Médicaments');
 }
 
 Future<void> tapVisible(WidgetTester tester, Finder finder) async {

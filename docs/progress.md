@@ -5,7 +5,7 @@ Journal partagé entre les sessions et les assistants (Claude Code, Codex, Gemin
 
 ## État actuel
 
-Étapes 1 (socle), 2 (médicaments), 3 (rappels + écran d'alarme) et 4 (hydratation) faites. Design system des maquettes en place (couleurs, police Atkinson Hyperlegible, cartes, badges). Onglet Médicaments complet : liste du jour avec bandeau de dates, confirmation / « non pris », formulaire en 3 étapes (ajout, modification, suppression). Autres onglets : écrans provisoires au nouveau style. 81 tests.
+Étapes 1 (socle), 2 (médicaments), 3 (rappels + écran d'alarme), 4 (hydratation) et 5 (accueil) faites. Design system des maquettes en place (couleurs, police Atkinson Hyperlegible, cartes, badges). Onglet Médicaments complet : liste du jour avec bandeau de dates, confirmation / « non pris », formulaire en 3 étapes (ajout, modification, suppression). Autres onglets : écrans provisoires au nouveau style. 89 tests.
 
 ## En cours
 
@@ -24,7 +24,7 @@ _Rien pour l'instant._
 - [ ] Rafraîchissement quotidien des rappels en arrière-plan (workmanager), si les tests sur téléphone le justifient
 - [x] Étape 4 : hydratation (maquette 5)
 - [x] Essayer l'onglet Eau sur le Realme (objectif, verres, rappels d'eau)
-- [ ] Étape 5 : accueil (maquette 2, réutiliser `dayPlanProvider` et `IntakePlanner.nextIntake`)
+- [x] Étape 5 : accueil (maquette 2)
 - [ ] Étape 6 : hôpitaux (maquette 6) · Étape 7 : connexion (maquette 1) + Supabase · Étape 8 : historique (maquette 8) + paramètres
 - [ ] Tester l'onglet Médicaments sur le téléphone (`flutter run`)
 - [x] Initialiser le dépôt git
@@ -74,4 +74,5 @@ _Rien pour l'instant._
 - Étape 3 (branche `etape-3-rappels`) : `core/notifications` (interface + flutter_local_notifications + fuseau horaire), `ReminderPlanner`, `ReminderGateway` + implémentation, use cases `RescheduleReminders` / `SnoozeReminder`, rappels branchés dans les use cases existants, écran d'alarme (maquette 7), notifications touchées → écran d'alarme, demande d'autorisation expliquée après l'ajout d'un médicament. Android : permissions, récepteurs, désucrage, nom de l'appli « Ma Santé ». Tests : 56 (faux service de notifications ; `settle()` dans `test/helpers/pump_app.dart` car Drift a besoin de temps réel en test de widget).
 - Essai sur le Realme : aucune alarme. Causes trouvées avec adb : ColorOS ajoutait jusqu'à 1 h de délai aux alarmes exactes, et rouvrir l'appli à l'heure pile annulait le rappel encore non livré (horloge arrondie à la minute). Corrigé : mode « réveil », rappels dus conservés, `scheduleVersion` pour forcer la replanification. Vérifié sur le téléphone : `window=0`, prochain réveil annoncé par Android.
 - Alarme sonore (demande de l'utilisateur : le rappel s'affichait sans sonner) : canal « alarme_medicaments » (sonnerie de réveil, USAGE_ALARM, répétition, 5 min max). Vérifié sur le Realme : à 13h05 Android a ouvert l'écran d'alarme de lui-même, ce qui coupait la sonnerie dans la seconde → la sonnerie ne s'arrête plus à l'ouverture de l'écran, seulement sur une réponse ou en le quittant. 63 tests.
-- Étape 4 (branche `etape-4-hydratation`) : feature `hydration/` complète (domaine, data, di, ViewModels, écrans « Mon eau du jour » et « Mon objectif d'eau »), rappels d'eau sur le canal « rappels_eau », toucher → onglet Eau, replanification au démarrage/retour (médicaments puis eau). Éléments de formulaire déplacés dans `core/widgets/form_widgets.dart` (partagés). `settle()` des tests rendu robuste aux indicateurs de chargement. 81 tests. Essayé sur le Realme : objectif, verres, rappels d'eau OK.
+- Étape 4 (branche `etape-4-hydratation`) : feature `hydration/` complète (domaine, data, di, ViewModels, écrans « Mon eau du jour » et « Mon objectif d'eau »), rappels d'eau sur le canal « rappels_eau », toucher → onglet Eau, replanification au démarrage/retour (médicaments puis eau). Éléments de formulaire déplacés dans `core/widgets/form_widgets.dart` (partagés). `settle()` des tests rendu robuste aux indicateurs de chargement. 89 tests. Essayé sur le Realme : objectif, verres, rappels d'eau OK.
+- Étape 5 (branche `etape-5-accueil`) : feature `dashboard/` (DailySummaryCalculator, DashboardViewModel, carte « Prochaine prise », compteurs, liste « Aujourd'hui »). « Bonjour » sans prénom jusqu'à l'étape 7. Nouvelle règle d'architecture testée : entre features, seulement domain/, di/ et presentation/mappers/. Captures : badges coupés au milieu des mots et « Médicaments » sur deux lignes, corrigés. Outil de test `tapTab()` (les libellés d'onglets apparaissent aussi sur l'Accueil). 89 tests. Essayé sur le Realme : OK.

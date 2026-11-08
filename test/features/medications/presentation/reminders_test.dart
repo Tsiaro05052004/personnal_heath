@@ -213,8 +213,7 @@ void main() {
     (tester) async {
       final system = FakeNotificationService(granted: false);
       await pumpApp(tester, notifications: system);
-      await tester.tap(find.text('Médicaments'));
-      await tester.pumpAndSettle();
+      await tapTab(tester, 'Médicaments');
 
       await tapVisible(tester, find.text('Ajouter un médicament'));
       await tester.enterText(find.byType(TextField).first, 'Doliprane');

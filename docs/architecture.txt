@@ -226,9 +226,10 @@ Règle pratique : on ne crée un dossier que lorsqu'il contient un fichier
     importe les énumérations de domain/entities/ pour les stocker
     (textEnum).
   - app/ assemble tout : rien ne dépend de app/.
-  - Entre features : on n'importe que le domain/ (ou di/) d'une autre
-    feature, jamais sa data/ ni sa presentation/ (ex. dashboard utilise les
-    use cases de medications et hydration).
+  - Entre features : on n'importe que le domain/, le di/ ou les libellés
+    (presentation/mappers/) d'une autre feature, jamais sa data/, ses
+    écrans ni ses ViewModels (ex. dashboard utilise dayPlanProvider,
+    ConfirmIntake et DoseLabels de medications).
 
 
 5. MVVM : LA COUCHE PRÉSENTATION
@@ -277,13 +278,21 @@ Règle pratique : on ne crée un dossier que lorsqu'il contient un fichier
   - authStateProvider (di/) : écouté par router.dart pour rediriger.
   Écrans : login_screen, register_screen.
 
-6.2 dashboard/  (Accueil)
-  - Ne stocke rien : il AGRÈGE les données des autres features.
-  - Affiche : prises prévues aujourd'hui, confirmées, en attente, en
-    retard / non confirmées, verres bus / objectif, barre de progression.
-  - domain/services/daily_summary_calculator.dart : calcule le bilan du
-    jour (réutilisé par history/).
-  Écran : dashboard_screen.
+6.2 dashboard/  (Accueil)  — FAIT (étape 5)
+  - Ne stocke rien : il AGRÈGE dayPlanProvider (medications/di) et
+    waterDayProvider (hydration/di).
+  - domain/services/daily_summary_calculator.dart → DailySummary :
+    prises regroupées par heure (IntakeGroup, « 20h00 · Paracétamol,
+    Amoxicilline »), état d'un groupe (en attente > non confirmée > à venir
+    > non pris > pris ; « pris » seulement si toutes le sont), prochaine
+    prise (IntakePlanner.nextIntake), eau du jour. Réutilisé par history/.
+  - Écran (maquette 2) : date + « Bonjour » (prénom à l'étape 7), bouton
+    profil → Paramètres, carte « Prochaine prise » (en attente depuis /
+    dans …, « Confirmer la prise » dès 30 min avant), sinon « Aucun
+    médicament » (→ ajout) ou « Plus de prise prévue aujourd'hui » (avec
+    le nombre de prises non confirmées → onglet Médicaments) ; compteurs
+    Médicaments / Eau (→ onglets) ; liste « Aujourd'hui » + « Tout voir ».
+  ViewModel : DashboardViewModel (confirmation via ConfirmIntake).
 
 6.3 medications/  (Mes médicaments + Suivi des prises)  — FAIT (étape 2)
   Entités (domain/entities) :
@@ -534,7 +543,7 @@ Règle pratique : on ne crée un dossier que lorsqu'il contient un fichier
   3. core/notifications + rappels + écran d'alarme (maquette 7) — FAIT,
      à tester sur le vrai téléphone (workmanager reporté)
   4. hydration/ (maquette 5) — FAIT
-  5. dashboard/ (maquette 2 ; réutilise dayPlanProvider)
+  5. dashboard/ (maquette 2) — FAIT
   6. hospitals/ (maquette 6)
   7. auth/ (maquette 1) + Supabase + sync
   8. history/ (maquette 8) puis settings/
