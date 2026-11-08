@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/notifications/notification_service.dart';
+import '../../../core/notifications/reminder_preferences.dart';
 import '../../../core/time/clock.dart';
 import '../data/datasources/local/medication_local_data_source.dart';
 import '../data/reminders/notification_reminder_gateway.dart';
@@ -15,6 +16,7 @@ import '../domain/usecases/get_medication.dart';
 import '../domain/usecases/mark_intake_missed.dart';
 import '../domain/usecases/reschedule_reminders.dart';
 import '../domain/usecases/save_medication.dart';
+import '../domain/usecases/silence_reminder.dart';
 import '../domain/usecases/snooze_reminder.dart';
 import '../domain/usecases/watch_day_plan.dart';
 import '../domain/usecases/watch_medications.dart';
@@ -33,6 +35,7 @@ final reminderGatewayProvider = Provider<ReminderGateway>(
   (ref) => NotificationReminderGateway(
     ref.watch(notificationServiceProvider),
     ReminderTexts.build,
+    alarmSound: ref.watch(alarmSoundEnabledProvider),
   ),
 );
 
@@ -42,6 +45,9 @@ final rescheduleRemindersProvider = Provider(
     ref.watch(reminderGatewayProvider),
     () => ref.read(clockProvider),
   ),
+);
+final silenceReminderProvider = Provider(
+  (ref) => SilenceReminder(ref.watch(reminderGatewayProvider)),
 );
 final snoozeReminderProvider = Provider(
   (ref) => SnoozeReminder(ref.watch(reminderGatewayProvider)),

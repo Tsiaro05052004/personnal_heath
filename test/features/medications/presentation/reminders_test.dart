@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:personnal_heath/app/router.dart';
 import 'package:personnal_heath/core/database/app_database.dart';
 import 'package:personnal_heath/core/navigation/app_routes.dart';
+import 'package:personnal_heath/features/medications/data/reminders/notification_reminder_gateway.dart';
 import 'package:personnal_heath/features/medications/data/reminders/reminder_payload.dart';
 import 'package:personnal_heath/features/medications/domain/entities/intake_status.dart';
 import 'package:personnal_heath/features/medications/domain/entities/medication_reminder.dart';
@@ -50,6 +51,37 @@ void main() {
         );
     expect(first, ['followUp 14:30', 'dose 20:0', 'followUp 20:30']);
   });
+
+  testWidgets(
+    "l'alarme sonne tant que l'écran est ouvert, se tait en le quittant",
+    (tester) async {
+      final system = FakeNotificationService();
+      final db = await pumpApp(
+        tester,
+        seed: seedParacetamol,
+        notifications: system,
+      );
+      final id = await paracetamolId(db, tester);
+      final dose = NotificationReminderGateway.idFor(
+        ReminderKind.dose,
+        id,
+        at14h,
+      );
+
+      // Android ouvre l'écran d'alarme de lui-même quand l'alarme sonne :
+      // la sonnerie ne doit pas s'arrêter pour autant.
+      await openAlarm(tester, id);
+      expect(system.cancelled, isNot(contains(dose)));
+
+      // Bouton retour du téléphone.
+      await tester.binding.handlePopRoute();
+      await settle(tester);
+
+      expect(system.cancelled, contains(dose));
+      // Le 2e rappel de 14h30 reste prévu.
+      expect(system.byTime.first.at, DateTime(2026, 11, 8, 14, 30));
+    },
+  );
 
   testWidgets("l'écran d'alarme affiche la prise (maquette 7)", (tester) async {
     final db = await pumpApp(tester, seed: seedParacetamol);

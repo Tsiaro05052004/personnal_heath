@@ -36,16 +36,31 @@ class NotificationButton {
   final String label;
 }
 
-/// Canaux Android : l'utilisateur peut régler le son de chacun.
+/// Canaux Android : l'utilisateur peut régler le son de chacun. Le son
+/// d'un canal ne peut plus changer après sa création : un son différent
+/// demande un autre canal.
 enum NotificationChannel {
+  /// Son de notification ordinaire, joué une fois.
   medication('rappels_medicaments', 'Rappels de médicaments'),
+
+  /// Sonnerie de réveil, au volume du réveil, répétée jusqu'à ce que
+  /// l'utilisateur réagisse (5 min au plus).
+  medicationAlarm(
+    'alarme_medicaments',
+    'Alarme des médicaments',
+    alarmSound: true,
+  ),
   water('rappels_eau', "Rappels d'hydratation");
 
-  const NotificationChannel(this.id, this.label);
+  const NotificationChannel(this.id, this.label, {this.alarmSound = false});
 
   final String id;
   final String label;
+  final bool alarmSound;
 }
+
+/// Durée maximale de la sonnerie d'alarme si personne ne réagit.
+const alarmRingDuration = Duration(minutes: 5);
 
 /// Une notification planifiée encore en attente dans le système.
 class PendingNotification {

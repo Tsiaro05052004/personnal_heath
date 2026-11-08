@@ -30,6 +30,10 @@ class _IntakeAlarmScreenState extends ConsumerState<IntakeAlarmScreen> {
   bool _busy = false;
   bool _autoActionDone = false;
 
+  /// Gardé pour couper la sonnerie en quittant l'écran (dispose ne peut
+  /// plus utiliser ref).
+  IntakeAlarmViewModel? _viewModel;
+
   NotifierProvider<IntakeAlarmViewModel, AsyncValue<IntakeAlarmUiState>>
   get _provider => intakeAlarmViewModelProvider(widget.target);
   IntakeAlarmViewModel get _vm => ref.read(_provider.notifier);
@@ -38,6 +42,12 @@ class _IntakeAlarmScreenState extends ConsumerState<IntakeAlarmScreen> {
   Widget build(BuildContext context) {
     final AsyncValue<IntakeAlarmUiState> async = ref.watch(_provider);
     final state = async.value;
+
+    // La sonnerie continue tant que l'écran est affiché : Android l'ouvre
+    // de lui-même quand l'alarme sonne. Elle s'arrête sur une réponse
+    // (les use cases annulent les rappels de la prise), en quittant
+    // l'écran (dispose) ou au bout de alarmRingDuration.
+    _viewModel = _vm;
 
     // Bouton « J'ai pris » de la notification : on confirme directement.
     if (state != null &&
@@ -157,6 +167,12 @@ class _IntakeAlarmScreenState extends ConsumerState<IntakeAlarmScreen> {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
     _close();
+  }
+
+  @override
+  void dispose() {
+    _viewModel?.silence();
+    super.dispose();
   }
 
   void _close() {

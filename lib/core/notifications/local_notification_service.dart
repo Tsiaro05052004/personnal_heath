@@ -72,11 +72,23 @@ class LocalNotificationService implements NotificationService {
           channel.id,
           channel.label,
           importance: Importance.max,
+          sound: channel.alarmSound ? _alarmRingtone : null,
+          audioAttributesUsage: channel.alarmSound
+              ? AudioAttributesUsage.alarm
+              : AudioAttributesUsage.notification,
         ),
       );
     }
     return service;
   }
+
+  /// Sonnerie de réveil choisie dans les réglages du téléphone.
+  static const _alarmRingtone = UriAndroidNotificationSound(
+    'content://settings/system/alarm_alert',
+  );
+
+  /// Notification.FLAG_INSISTENT : le son se répète jusqu'à une réaction.
+  static const _flagInsistent = 4;
 
   static NotificationTap? _toTap(NotificationResponse response) {
     final payload = response.payload;
@@ -124,6 +136,18 @@ class LocalNotificationService implements NotificationService {
               : AndroidNotificationCategory.reminder,
           fullScreenIntent: n.fullScreen,
           color: AppColors.primary,
+          sound: n.channel.alarmSound ? _alarmRingtone : null,
+          audioAttributesUsage: n.channel.alarmSound
+              ? AudioAttributesUsage.alarm
+              : AudioAttributesUsage.notification,
+          additionalFlags: n.channel.alarmSound
+              ? Int32List.fromList([_flagInsistent])
+              : null,
+          // Arrête une sonnerie que personne n'entend ; le 2e rappel
+          // sonnera à nouveau.
+          timeoutAfter: n.channel.alarmSound
+              ? alarmRingDuration.inMilliseconds
+              : null,
           styleInformation: BigTextStyleInformation(n.body),
           actions: [
             for (final action in n.actions)

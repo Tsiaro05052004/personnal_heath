@@ -10,10 +10,22 @@ typedef ReminderTextBuilder = ReminderText Function(MedicationReminder);
 
 /// Rappels de prise confiés aux notifications planifiées du système.
 class NotificationReminderGateway implements ReminderGateway {
-  NotificationReminderGateway(this._service, this._text);
+  NotificationReminderGateway(
+    this._service,
+    this._text, {
+    this.alarmSound = true,
+  });
 
   final NotificationService _service;
   final ReminderTextBuilder _text;
+
+  /// Sonnerie de réveil répétée (option « Alarme sonore », activée par
+  /// défaut) plutôt que le son de notification ordinaire.
+  final bool alarmSound;
+
+  NotificationChannel get _channel => alarmSound
+      ? NotificationChannel.medicationAlarm
+      : NotificationChannel.medication;
 
   /// À incrémenter quand la façon de planifier change (ex. passage au
   /// mode « réveil ») : force la replanification des rappels existants.
@@ -28,7 +40,7 @@ class NotificationReminderGateway implements ReminderGateway {
     final text = _text(r);
     // Empreinte stable d'une exécution à l'autre (Object.hash ne l'est pas).
     final hash = notificationIdFor(
-      '$scheduleVersion|${text.title}|${text.body}|'
+      '$scheduleVersion|${_channel.id}|${text.title}|${text.body}|'
       '${r.fireAt.millisecondsSinceEpoch}',
     );
     return ScheduledNotification(
@@ -43,6 +55,7 @@ class NotificationReminderGateway implements ReminderGateway {
         fireAt: r.fireAt,
         contentHash: hash,
       ).encode(),
+      channel: _channel,
       fullScreen: true,
       actions: const [
         NotificationButton(AppRoutes.takenAction, "J'ai pris mon médicament"),
@@ -90,6 +103,16 @@ class NotificationReminderGateway implements ReminderGateway {
   Future<void> cancelFor(String medicationId, DateTime scheduledAt) async {
     for (final kind in ReminderKind.values) {
       await _service.cancel(idFor(kind, medicationId, scheduledAt));
+    }
+  }
+
+  @override
+  Future<void> silence(String medicationId, DateTime scheduledAt) async {
+    final pending = {for (final p in await _service.pending()) p.id};
+    for (final kind in ReminderKind.values) {
+      final id = idFor(kind, medicationId, scheduledAt);
+      // Encore en attente = pas encore affiché : on le garde.
+      if (!pending.contains(id)) await _service.cancel(id);
     }
   }
 

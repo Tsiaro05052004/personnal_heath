@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:personnal_heath/core/notifications/notification_service.dart';
 import 'package:personnal_heath/features/medications/data/reminders/notification_reminder_gateway.dart';
 import 'package:personnal_heath/features/medications/data/reminders/reminder_payload.dart';
 import 'package:personnal_heath/features/medications/domain/entities/dose_time.dart';
@@ -121,5 +122,49 @@ void main() {
     await replace([reminder(ReminderKind.dose)]);
     await replace(const []);
     expect(system.scheduled, isEmpty);
+  });
+  test('par défaut, les rappels sonnent comme un réveil', () async {
+    await replace([reminder(ReminderKind.dose)]);
+    expect(system.byTime.single.channel, NotificationChannel.medicationAlarm);
+  });
+
+  test('sans « alarme sonore », simple son de notification', () async {
+    final quiet = NotificationReminderGateway(
+      system,
+      (r) => (title: 'Rappel', body: ''),
+      alarmSound: false,
+    );
+    await quiet.replaceAll([reminder(ReminderKind.dose)], now);
+    expect(system.byTime.single.channel, NotificationChannel.medication);
+  });
+
+  test('changer l’option replanifie les rappels', () async {
+    await replace([reminder(ReminderKind.dose)]);
+    final quiet = NotificationReminderGateway(
+      system,
+      (r) => (title: 'Rappel ${r.medication.name}', body: r.kind.name),
+      alarmSound: false,
+    );
+    await quiet.replaceAll([reminder(ReminderKind.dose)], now);
+    expect(system.scheduleCalls, 2);
+  });
+
+  test('silence fait taire le rappel affiché, garde le 2e rappel', () async {
+    await replace([
+      reminder(ReminderKind.dose),
+      reminder(ReminderKind.followUp),
+    ]);
+    // Le rappel de 20h00 a été affiché : il n'est plus « en attente ».
+    final dose = NotificationReminderGateway.idFor(
+      ReminderKind.dose,
+      'para',
+      DateTime(2026, 11, 8, 20),
+    );
+    system.scheduled.remove(dose);
+
+    await gateway.silence('para', DateTime(2026, 11, 8, 20));
+
+    expect(system.cancelled, contains(dose));
+    expect(system.byTime.single.at, DateTime(2026, 11, 8, 20, 30));
   });
 }

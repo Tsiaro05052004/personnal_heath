@@ -427,12 +427,21 @@ Règle pratique : on ne crée un dossier que lorsqu'il contient un fichier
      l'autorisation des notifications.
   6. Confirmer ou déclarer non prise → annule tous les rappels de cette
      prise (y compris la notification affichée).
-  7. Toucher la notification → écran d'alarme (route /alarme, maquette 7) :
+  7. Alarme sonore (option, ACTIVÉE par défaut, alarmSoundEnabledProvider ;
+     interrupteur dans Paramètres à l'étape 8) : canal Android séparé
+     « alarme_medicaments » — sonnerie de réveil du téléphone, volume du
+     réveil (USAGE_ALARM), répétée (FLAG_INSISTENT), coupée au bout de
+     5 min si personne ne réagit (le 2e rappel sonne 30 min après). Sans
+     l'option : canal « rappels_medicaments », son de notification.
+     La sonnerie continue pendant l'affichage de l'écran d'alarme (Android
+     l'ouvre de lui-même) ; elle s'arrête sur une réponse ou en quittant
+     l'écran (SilenceReminder : seulement les rappels déjà affichés).
+  8. Toucher la notification → écran d'alarme (route /alarme, maquette 7) :
      « J'ai pris mon médicament », « Me le rappeler dans 10 min »,
      « Je ne l'ai pas pris », rappel « ne doublez jamais une dose ».
      Le bouton « J'ai pris » de la notification ouvre l'appli et confirme
      directement (traité dans l'appli : base locale, pas d'isolate de fond).
-  8. Autorisations : demandées après l'enregistrement d'un médicament,
+  9. Autorisations : demandées après l'enregistrement d'un médicament,
      avec une explication d'abord (jamais au premier lancement).
 
   Reste à faire :
@@ -440,7 +449,7 @@ Règle pratique : on ne crée un dossier que lorsqu'il contient un fichier
     si l'appli n'est jamais rouverte pendant 14 jours, les rappels
     s'arrêtent. Chaque toucher de rappel rouvre l'appli et prolonge la
     fenêtre, ce qui couvre l'usage normal.
-  - Alarme sonore optionnelle et délai du 2e rappel réglables (étape 8,
+  - Interrupteur « Alarme sonore » et délai du 2e rappel (étape 8,
     Paramètres) ; rappels d'eau (étape 4) dans le canal « rappels_eau ».
 
   Configuration Android requise (AndroidManifest.xml) :

@@ -14,6 +14,10 @@ abstract interface class ReminderGateway {
   /// Retire tous les rappels de cette prise, y compris celui déjà affiché.
   Future<void> cancelFor(String medicationId, DateTime scheduledAt);
 
+  /// Fait taire les rappels de cette prise déjà affichés, sans toucher aux
+  /// rappels encore à venir.
+  Future<void> silence(String medicationId, DateTime scheduledAt);
+
   /// Autorisations accordées pour les rappels.
   Future<ReminderPermissions> permissions();
 

@@ -60,6 +60,18 @@ class IntakeAlarmViewModel extends Notifier<AsyncValue<IntakeAlarmUiState>> {
 
   ScheduledIntake? get _intake => state.value?.intake;
 
+  /// Arrête la sonnerie des rappels affichés de cette prise (l'utilisateur
+  /// quitte l'écran d'alarme sans répondre).
+  Future<void> silence() async {
+    final intake = _intake;
+    if (intake == null) return;
+    try {
+      await ref.read(silenceReminderProvider)(intake);
+    } catch (_) {
+      // Sans gravité : la sonnerie s'arrête seule au bout de 5 min.
+    }
+  }
+
   /// Chaque action renvoie le message à afficher.
   Future<String> confirm() => _run(() async {
     await ref.read(confirmIntakeProvider)(_intake!, ref.read(clockProvider));
