@@ -16,4 +16,21 @@ abstract final class AppRoutes {
   static const newMedication = '/medicament/nouveau';
   static const medicationPattern = '/medicament/:id';
   static String editMedication(String id) => '/medicament/$id';
+
+  /// Écran d'alarme d'une prise (ouvert depuis une notification).
+  /// [action] = [takenAction] si l'utilisateur a touché « J'ai pris ».
+  static const intakeAlarm = '/alarme';
+  static const takenAction = 'pris';
+  static String intakeAlarmFor(
+    String medicationId,
+    DateTime scheduledAt, {
+    String? action,
+  }) => Uri(
+    path: intakeAlarm,
+    queryParameters: {
+      'med': medicationId,
+      'at': '${scheduledAt.millisecondsSinceEpoch}',
+      'action': ?action,
+    },
+  ).toString();
 }

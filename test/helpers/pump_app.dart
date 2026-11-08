@@ -6,7 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:personnal_heath/app/app.dart';
 import 'package:personnal_heath/core/database/app_database.dart';
+import 'package:personnal_heath/core/notifications/notification_service.dart';
 import 'package:personnal_heath/core/time/clock.dart';
+
+import 'fake_notification_service.dart';
 
 /// « Maintenant » dans les tests : dimanche 8 novembre 2026, 14h10.
 final testNow = DateTime(2026, 11, 8, 14, 10);
@@ -17,6 +20,7 @@ Future<AppDatabase> pumpApp(
   WidgetTester tester, {
   DateTime? now,
   Future<void> Function(AppDatabase db)? seed,
+  FakeNotificationService? notifications,
 }) async {
   await initializeDateFormatting('fr_FR');
   // closeStreamsSynchronously : sinon Drift ferme ses flux avec une minuterie
@@ -38,10 +42,25 @@ Future<AppDatabase> pumpApp(
       overrides: [
         appDatabaseProvider.overrideWithValue(db),
         clockProvider.overrideWith(() => FixedClock(now ?? testNow)),
+        notificationServiceProvider.overrideWithValue(
+          notifications ?? FakeNotificationService(),
+        ),
       ],
       child: const App(),
     ),
   );
-  await tester.pumpAndSettle();
+  await settle(tester);
   return db;
+}
+
+/// Attend la fin du travail en cours, y compris celui qui ne dessine rien
+/// (ex. la replanification des rappels) : les requêtes Drift ont besoin
+/// d'un peu de temps réel, que pumpAndSettle (temps simulé) ne donne pas.
+Future<void> settle(WidgetTester tester) async {
+  for (var i = 0; i < 3; i++) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
+    );
+    await tester.pumpAndSettle();
+  }
 }

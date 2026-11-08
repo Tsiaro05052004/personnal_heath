@@ -6,7 +6,7 @@ Shared instructions for AI coding agents (Claude Code, Codex, Gemini) working in
 
 Flutter app `personnal_heath` (personal health tracker — note the package name keeps the "heath" spelling; don't "fix" it in imports, it would break `package:personnal_heath/...`).
 
-Steps 1 (foundation) and 2 (`medications/`: CRUD + daily intake tracking) are done; the other tabs are placeholders. UI follows the mockups in `docs/Maquettes app santé.pdf` (8 screens; open it before building a screen). See `docs/progress.md` for the current step.
+Steps 1 (foundation), 2 (`medications/`: CRUD + daily intake tracking) and 3 (reminders: scheduled notifications + full-screen alarm screen) are done; the other tabs are placeholders. UI follows the mockups in `docs/Maquettes app santé.pdf` (8 screens; open it before building a screen). See `docs/progress.md` for the current step.
 
 - Dart SDK `^3.13.5`; main deps: flutter_riverpod 3, go_router, drift + drift_flutter, intl, uuid.
 - Lints: `flutter_lints` (`analysis_options.yaml`), with platform folders and `build/` excluded from analysis.
@@ -66,7 +66,8 @@ flutter build apk --debug                    # Android build (JDK 21 configured 
 - Riverpod 3 recreates a Notifier on every rebuild: keep state that must survive (e.g. selected day) in its own provider, and use `ref.read` (not `watch`) in form ViewModels so they don't reset. Route paths live in `AppRoutes` (`lib/core/navigation/app_routes.dart`, so screens/shared widgets don't depend on `app/`); the routes themselves in `lib/app/router.dart`. The DB is exposed by `appDatabaseProvider`; tests override it with `AppDatabase(NativeDatabase.memory())`.
 - Drift row classes are suffixed `Row` (`@DataClassName('MedicationRow')`) so they never clash with domain entities; mappers in `data/mappers/` convert them.
 - Drift tables use the `SyncColumns` mixin (UUID `id` via `newId()`, `userId`, `updatedAt`, `deleted`, `dirty`). Times of day are stored as minutes since midnight. Domain enums (`MealInstruction`, `IntakeStatus`) are stored with `textEnum`. Generated `*.g.dart` files are committed.
-- Reminders are OS-scheduled over a rolling 2–3 day window and rebuilt on app start, on treatment/water changes, daily, and after reboot. Confirming an intake cancels its follow-up reminder and alarm.
+- Reminders (section 7 of the doc): `ReminderPlanner` (pure rules) → `ReminderGateway` (domain interface) → `NotificationReminderGateway` (data) → `NotificationService` (`lib/core/notifications/`, the only code touching flutter_local_notifications). 14-day rolling window rebuilt on app start/resume and after any treatment change; confirming / marking missed cancels that intake's reminders. Notification taps open `/alarme` (`IntakeAlarmScreen`). Keep flutter_local_notifications on 22.x (23 needs compileSdk 37, not resolvable with the installed SDK).
+- Widget tests: override `notificationServiceProvider` with `FakeNotificationService` (done by `pumpApp`), and use `settle(tester)` instead of bare `pumpAndSettle` after actions that hit the DB — Drift needs real time, not fake time.
 
 ## Working notes
 

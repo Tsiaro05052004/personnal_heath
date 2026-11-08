@@ -14,6 +14,7 @@ import '../mappers/medication_error_label.dart';
 import '../viewmodels/medication_form_ui_state.dart';
 import '../viewmodels/medication_form_view_model.dart';
 import '../widgets/form_section.dart';
+import '../widgets/reminder_permission_prompt.dart';
 
 /// « Nouveau médicament » / « Modifier le médicament », en 3 étapes :
 /// médicament → horaires → durée et consignes.
@@ -129,12 +130,13 @@ class _MedicationFormScreenState extends ConsumerState<MedicationFormScreen> {
   Future<void> _next() async {
     FocusScope.of(context).unfocus();
     final saved = await _vm.next();
-    if (saved && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${_name.text.trim()} est enregistré.')),
-      );
-      context.pop();
-    }
+    if (!saved || !mounted) return;
+    await ensureReminderPermissions(context, ref);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${_name.text.trim()} est enregistré.')),
+    );
+    context.pop();
   }
 
   Future<void> _delete() async {

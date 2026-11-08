@@ -7,6 +7,7 @@ import '../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../features/history/presentation/screens/history_screen.dart';
 import '../features/hospitals/presentation/screens/hospitals_map_screen.dart';
 import '../features/hydration/presentation/screens/hydration_screen.dart';
+import '../features/medications/presentation/screens/intake_alarm_screen.dart';
 import '../features/medications/presentation/screens/medication_form_screen.dart';
 import '../features/medications/presentation/screens/medication_list_screen.dart';
 import '../features/settings/presentation/screens/settings_screen.dart';
@@ -37,6 +38,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.newMedication,
         builder: (context, state) => const MedicationFormScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.intakeAlarm,
+        builder: (context, state) {
+          final query = state.uri.queryParameters;
+          return IntakeAlarmScreen(
+            target: (
+              medicationId: query['med'] ?? '',
+              scheduledAt: DateTime.fromMillisecondsSinceEpoch(
+                int.tryParse(query['at'] ?? '') ?? 0,
+              ),
+            ),
+            action: query['action'],
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.medicationPattern,

@@ -90,16 +90,18 @@ lib/
 │   │                             intake_logs, water_settings, water_logs,
 │   │                             hospitals_cache)
 │   ├── notifications/
-│   │   ├── notification_service.dart   Seul point d'accès aux notifications :
-│   │   │                               planifier, annuler, gérer le clic
-│   │   ├── reminder_scheduler.dart     Recalcule TOUS les rappels à venir à
-│   │   │                               partir des médicaments et de l'objectif
-│   │   │                               d'eau (voir section 7)
-│   │   └── notification_ids.dart       Règle de calcul des identifiants pour
-│   │                                   pouvoir annuler un rappel précis
-│   ├── background/
-│   │   └── background_tasks.dart       Tâches workmanager (replanification
-│   │                                   quotidienne, synchronisation)
+│   │   ├── notification_service.dart   Interface générique, seul point
+│   │   │                               d'accès aux notifications : planifier,
+│   │   │                               annuler, lister, autorisations,
+│   │   │                               notifications touchées. Identifiants
+│   │   │                               stables (notificationIdFor, FNV-1a)
+│   │   └── local_notification_service.dart  Implémentation
+│   │                               flutter_local_notifications + fuseau
+│   │                               horaire (flutter_timezone) ; service
+│   │                               inactif sur ordinateur
+│   ├── background/                 (pas encore) workmanager : replanifier
+│   │                               chaque jour même si l'appli n'est jamais
+│   │                               ouverte — voir section 7
 │   ├── sync/
 │   │   └── sync_service.dart     Envoie les modifications locales vers
 │   │                             Supabase et récupère celles du serveur
@@ -315,9 +317,9 @@ Règle pratique : on ne crée un dossier que lorsqu'il contient un fichier
   Use cases : WatchMedications, GetMedication, SaveMedication,
   DeleteMedication (suppression logique ; l'historique des prises reste),
   WatchDayPlan, ConfirmIntake, MarkIntakeMissed.
-  (Étape 3 : SaveMedication/DeleteMedication replanifieront les rappels et
-  ConfirmIntake annulera le 2e rappel, via une interface du domaine
-  implémentée dans core/notifications.)
+  SaveMedication / DeleteMedication replanifient les rappels ;
+  ConfirmIntake / MarkIntakeMissed annulent ceux de la prise ;
+  RescheduleReminders, SnoozeReminder (voir section 7).
   di/ : medicationRepositoryProvider + un provider par use case +
   dayPlanProvider(jour) (réutilisé par l'Accueil).
   ViewModels : MedicationListViewModel (jour choisi, plan du jour,
@@ -333,7 +335,7 @@ Règle pratique : on ne crée un dossier que lorsqu'il contient un fichier
     1. Médicament (nom, dosage, forme) ; 2. Horaires (1× à 4×, heures,
     quantité par pas de 0,5) ; 3. Durée et consignes (repas, début, fin,
     remarques). Suppression depuis l'icône corbeille en modification.
-  - L'écran d'alarme plein écran (maquette 7) sera fait à l'étape 3.
+  - intake_alarm_screen (/alarme?med=…&at=…, maquette 7) : voir section 7.
 
 6.4 hydration/  (Hydratation)
   Entités :
@@ -383,27 +385,76 @@ Règle pratique : on ne crée un dossier que lorsqu'il contient un fichier
   Écran : settings_screen.
 
 
-7. SYSTÈME DE RAPPELS (point le plus sensible)
+7. SYSTÈME DE RAPPELS (point le plus sensible)  — FAIT pour les médicaments
 --------------------------------------------------------------------------------
+  Qui fait quoi :
+    domain/services/reminder_planner.dart   règles pures (testées)
+    domain/repositories/reminder_gateway.dart  interface : replaceAll,
+                                            snooze, cancelFor, autorisations
+    domain/usecases/reschedule_reminders.dart  médicaments + prises → plan
+                                            → gateway
+    data/reminders/notification_reminder_gateway.dart  implémentation avec
+                                            core/notifications
+    presentation/mappers/reminder_texts.dart  texte des notifications
+                                            (injecté par di/)
+
   Fonctionnement :
-  1. reminder_scheduler calcule les rappels des prochains jours (fenêtre
-     glissante de 2 à 3 jours, pour rester sous la limite de notifications
-     planifiées du système).
-  2. Pour chaque prise prévue, il planifie :
-       - le rappel à l'heure exacte ;
-       - un 2e rappel à heure + délai (paramétrable, ex. 30 min) ;
-       - une alarme sonore si l'utilisateur l'a autorisée.
-  3. « Confirmer la prise » → enregistre l'IntakeLog ET annule le 2e
-     rappel et l'alarme de cette prise.
-  4. Le scheduler est relancé : au démarrage de l'appli, après chaque
-     modification de traitement ou d'objectif d'eau, chaque jour via
-     workmanager, et après un redémarrage du téléphone.
-  5. Une notification peut proposer les actions « Pris » / « Plus tard ».
+  1. ReminderPlanner calcule les rappels sur une fenêtre glissante de
+     14 jours, les plus proches d'abord, plafonnés à 300 (Android limite
+     une appli à ~500 alarmes ; marge gardée pour l'eau).
+  2. Pour chaque prise prévue non encore confirmée ni déclarée non prise :
+       - rappel à l'heure prévue ;
+       - 2e rappel 30 min après (ReminderPlanner.followUpDelay).
+     Avant la date de début / après la date de fin : aucun rappel.
+  3. Les notifications sont planifiées par Android (sonnent appli fermée,
+     replanifiées par le plugin après un redémarrage). Mode « réveil »
+     (setAlarmClock) si l'autorisation des alarmes exactes est accordée :
+     c'est le seul mode que ColorOS (Realme/Oppo) ne retarde pas — en mode
+     « exact » simple, le Realme de test décalait les rappels jusqu'à 1 h.
+     Effet visible : icône de réveil dans la barre d'état. Sans
+     l'autorisation, mode inexact (Android peut décaler).
+     Notification plein écran (catégorie alarme) avec le bouton « J'ai
+     pris mon médicament ».
+  4. La passerelle compare avec les notifications en attente : elle ne
+     replanifie que les nouvelles ou modifiées (empreinte du texte et de
+     l'heure dans le payload) et annule celles qui ne sont plus voulues.
+     Les rappels « plus tard » sont conservés, ainsi que ceux déjà dus mais
+     pas encore affichés (sinon rouvrir l'appli pile à l'heure les
+     annulait). Changer la façon de planifier → incrémenter
+     NotificationReminderGateway.scheduleVersion pour tout replanifier.
+  5. Replanification : au démarrage, au retour dans l'appli, après
+     ajout / modification / suppression d'un traitement et après
+     l'autorisation des notifications.
+  6. Confirmer ou déclarer non prise → annule tous les rappels de cette
+     prise (y compris la notification affichée).
+  7. Toucher la notification → écran d'alarme (route /alarme, maquette 7) :
+     « J'ai pris mon médicament », « Me le rappeler dans 10 min »,
+     « Je ne l'ai pas pris », rappel « ne doublez jamais une dose ».
+     Le bouton « J'ai pris » de la notification ouvre l'appli et confirme
+     directement (traité dans l'appli : base locale, pas d'isolate de fond).
+  8. Autorisations : demandées après l'enregistrement d'un médicament,
+     avec une explication d'abord (jamais au premier lancement).
+
+  Reste à faire :
+  - Rafraîchissement quotidien en arrière-plan (workmanager) : sans lui,
+    si l'appli n'est jamais rouverte pendant 14 jours, les rappels
+    s'arrêtent. Chaque toucher de rappel rouvre l'appli et prolonge la
+    fenêtre, ce qui couvre l'usage normal.
+  - Alarme sonore optionnelle et délai du 2e rappel réglables (étape 8,
+    Paramètres) ; rappels d'eau (étape 4) dans le canal « rappels_eau ».
 
   Configuration Android requise (AndroidManifest.xml) :
   - POST_NOTIFICATIONS (Android 13+)
-  - SCHEDULE_EXACT_ALARM / USE_EXACT_ALARM (heure exacte)
+  - SCHEDULE_EXACT_ALARM (heure exacte ; demandée à l'utilisateur sur
+    Android 14+. USE_EXACT_ALARM écarté : réservé aux réveils/agendas sur
+    le Play Store)
   - RECEIVE_BOOT_COMPLETED (replanifier après redémarrage)
+  - USE_FULL_SCREEN_INTENT + showWhenLocked/turnScreenOn sur l'activité
+    (écran d'alarme téléphone verrouillé)
+  - Récepteurs du plugin : ScheduledNotificationReceiver,
+    ScheduledNotificationBootReceiver, ActionBroadcastReceiver
+  - Gradle : désucrage Java (desugar_jdk_libs), compileSdk ≥ 36
+    (flutter_local_notifications 22 ; la 23 exige compileSdk 37)
   - ACCESS_FINE_LOCATION / ACCESS_COARSE_LOCATION (carte)
   - INTERNET
   Note : certaines marques (dont Realme/Oppo, le téléphone de test)
@@ -456,8 +507,8 @@ Règle pratique : on ne crée un dossier que lorsqu'il contient un fichier
   2. medications/ (CRUD + suivi) — cœur de l'application, en local ; premier
      exemple complet entités → use cases → dépôt → ViewModel → écran
      (FAIT, avec le design system des maquettes)
-  3. core/notifications + reminder_scheduler + écran d'alarme (maquette 7)
-     — à tester tôt sur le vrai téléphone
+  3. core/notifications + rappels + écran d'alarme (maquette 7) — FAIT,
+     à tester sur le vrai téléphone (workmanager reporté)
   4. hydration/ (maquette 5)
   5. dashboard/ (maquette 2 ; réutilise dayPlanProvider)
   6. hospitals/ (maquette 6)
