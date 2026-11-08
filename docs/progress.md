@@ -5,7 +5,7 @@ Journal partagé entre les sessions et les assistants (Claude Code, Codex, Gemin
 
 ## État actuel
 
-Étapes 1 (socle), 2 (médicaments) et 3 (rappels + écran d'alarme) faites. Design system des maquettes en place (couleurs, police Atkinson Hyperlegible, cartes, badges). Onglet Médicaments complet : liste du jour avec bandeau de dates, confirmation / « non pris », formulaire en 3 étapes (ajout, modification, suppression). Autres onglets : écrans provisoires au nouveau style. 56 tests.
+Étapes 1 (socle), 2 (médicaments), 3 (rappels + écran d'alarme) et 4 (hydratation) faites. Design system des maquettes en place (couleurs, police Atkinson Hyperlegible, cartes, badges). Onglet Médicaments complet : liste du jour avec bandeau de dates, confirmation / « non pris », formulaire en 3 étapes (ajout, modification, suppression). Autres onglets : écrans provisoires au nouveau style. 81 tests.
 
 ## En cours
 
@@ -22,7 +22,8 @@ _Rien pour l'instant._
 - [x] Étape 3 : notifications + rappels + écran d'alarme plein écran (maquette 7)
 - [ ] Tester les rappels sur le Realme : appli fermée, téléphone verrouillé, après redémarrage, optimisation de batterie
 - [ ] Rafraîchissement quotidien des rappels en arrière-plan (workmanager), si les tests sur téléphone le justifient
-- [ ] Étape 4 : hydratation (maquette 5)
+- [x] Étape 4 : hydratation (maquette 5)
+- [x] Essayer l'onglet Eau sur le Realme (objectif, verres, rappels d'eau)
 - [ ] Étape 5 : accueil (maquette 2, réutiliser `dayPlanProvider` et `IntakePlanner.nextIntake`)
 - [ ] Étape 6 : hôpitaux (maquette 6) · Étape 7 : connexion (maquette 1) + Supabase · Étape 8 : historique (maquette 8) + paramètres
 - [ ] Tester l'onglet Médicaments sur le téléphone (`flutter run`)
@@ -42,6 +43,7 @@ _Rien pour l'instant._
 | 2026-11-08 | Bouton « J'ai pris » de la notification ouvre l'appli | Traitement dans l'appli (base locale) plutôt que dans un isolate de fond : plus simple et plus fiable |
 | 2026-11-08 | Rappels en mode « réveil » (setAlarmClock) | Seul mode non retardé par ColorOS ; icône de réveil dans la barre d'état |
 | 2026-11-08 | Alarme sonore activée par défaut (sonnerie de réveil répétée, 5 min max) | Choix de l'utilisateur ; interrupteur prévu à l'étape 8 |
+| 2026-11-08 | Rappels d'eau : 8/jour max avec objectif intermédiaire, bilan 30 min avant le coucher, simple notification | CDC 2.3 C : encourager à boire régulièrement, jamais beaucoup d'un coup |
 | 2026-11-08 | Workmanager reporté | Chaque rappel touché rouvre l'appli et prolonge la fenêtre ; à réévaluer après essai sur téléphone |
 | 2026-11-08 | Clean Architecture stricte (use cases, mappers, `di/`) + MVVM (ViewModel `Notifier` + `UiState` immuable par écran) | Demande de l'utilisateur ; règles vérifiées par `test/architecture/dependency_rules_test.dart` |
 | 2026-11-07 | Onglets : Accueil, Médicaments, Eau, Carte, Historique ; Paramètres via l'icône ⚙ | 5 onglets maximum pour rester simple |
@@ -72,3 +74,4 @@ _Rien pour l'instant._
 - Étape 3 (branche `etape-3-rappels`) : `core/notifications` (interface + flutter_local_notifications + fuseau horaire), `ReminderPlanner`, `ReminderGateway` + implémentation, use cases `RescheduleReminders` / `SnoozeReminder`, rappels branchés dans les use cases existants, écran d'alarme (maquette 7), notifications touchées → écran d'alarme, demande d'autorisation expliquée après l'ajout d'un médicament. Android : permissions, récepteurs, désucrage, nom de l'appli « Ma Santé ». Tests : 56 (faux service de notifications ; `settle()` dans `test/helpers/pump_app.dart` car Drift a besoin de temps réel en test de widget).
 - Essai sur le Realme : aucune alarme. Causes trouvées avec adb : ColorOS ajoutait jusqu'à 1 h de délai aux alarmes exactes, et rouvrir l'appli à l'heure pile annulait le rappel encore non livré (horloge arrondie à la minute). Corrigé : mode « réveil », rappels dus conservés, `scheduleVersion` pour forcer la replanification. Vérifié sur le téléphone : `window=0`, prochain réveil annoncé par Android.
 - Alarme sonore (demande de l'utilisateur : le rappel s'affichait sans sonner) : canal « alarme_medicaments » (sonnerie de réveil, USAGE_ALARM, répétition, 5 min max). Vérifié sur le Realme : à 13h05 Android a ouvert l'écran d'alarme de lui-même, ce qui coupait la sonnerie dans la seconde → la sonnerie ne s'arrête plus à l'ouverture de l'écran, seulement sur une réponse ou en le quittant. 63 tests.
+- Étape 4 (branche `etape-4-hydratation`) : feature `hydration/` complète (domaine, data, di, ViewModels, écrans « Mon eau du jour » et « Mon objectif d'eau »), rappels d'eau sur le canal « rappels_eau », toucher → onglet Eau, replanification au démarrage/retour (médicaments puis eau). Éléments de formulaire déplacés dans `core/widgets/form_widgets.dart` (partagés). `settle()` des tests rendu robuste aux indicateurs de chargement. 81 tests. Essayé sur le Realme : objectif, verres, rappels d'eau OK.

@@ -127,7 +127,9 @@ lib/
 │   │   └── formatters.dart       « 08h00 », « 08:00 », « 0,5 », « 12 nov. »…
 │   └── widgets/                  Widgets réutilisables des maquettes : AppCard,
 │                                 StatusBadge, TabPage (grand titre d'onglet),
-│                                 DashedButton, PillIcon, ProfileButton…
+│                                 DashedButton, PillIcon, ProfileButton,
+│                                 form_widgets (FormQuestion, ChoiceButton,
+│                                 QuantityStepper…)
 │
 └── features/                     UNE FONCTIONNALITÉ = UN DOSSIER
     ├── auth/                     Connexion / Inscription / Déconnexion /
@@ -337,20 +339,33 @@ Règle pratique : on ne crée un dossier que lorsqu'il contient un fichier
     remarques). Suppression depuis l'icône corbeille en modification.
   - intake_alarm_screen (/alarme?med=…&at=…, maquette 7) : voir section 7.
 
-6.4 hydration/  (Hydratation)
-  Entités :
-  - WaterSettings : objectifVerres, mlParVerre, heureRéveil, heureCoucher,
-    rappelsActivés.
-  - WaterLog : un verre bu (date/heure, ml).
-  Règles (domain/services/water_reminder_planner.dart) :
-  - Rappels RÉPARTIS entre réveil et coucher (ex. 10h, 13h, 17h), jamais
-    « buvez beaucoup d'un coup ».
-  - Un rappel n'est affiché que si l'objectif intermédiaire n'est pas
-    atteint.
-  - Objectif atteint → message de réussite ; fin de journée sous
-    l'objectif → bilan « objectif non atteint ».
-  Écrans : hydration_screen (compteur « 3 / 5 » + « Ajouter un verre »),
-           hydration_setup_screen (premier paramétrage).
+6.4 hydration/  (Hydratation)  — FAIT (étape 4)
+  Entités : WaterSettings (objectifVerres, mlParVerre, réveil, coucher en
+  minutes depuis minuit, rappelsActivés), WaterLog (un verre bu, avec SA
+  quantité), WaterDay (verres, ml, objectif atteint, progression plafonnée),
+  WaterReminder (nudge | summary).
+  Règles (domain/services) :
+  - water_reminder_planner.dart : au plus 8 rappels par jour, répartis
+    régulièrement entre réveil et coucher (arrondis au quart d'heure),
+    chacun avec un objectif intermédiaire (5 verres, 7h–22h : 9h30→1,
+    12h→2, 14h30→3, 17h→4, 19h30→5). Un rappel dont l'objectif
+    intermédiaire est atteint n'est pas planifié → replanification à
+    chaque verre. Bilan 30 min avant le coucher (atteint ou non, sans
+    reproche). Fenêtre de 7 jours.
+  - water_rules.dart : 1 à 20 verres, verres de 50 à 1000 ml, coucher au
+    moins 2 h après le réveil (pas de passage de minuit).
+  - Jamais « buvez N verres maintenant » ; aucune quantité recommandée
+    (« demandez conseil à votre médecin »).
+  Use cases : WatchWaterDay, GetWaterSettings, SaveWaterSettings, AddGlass,
+  UndoLastGlass (suppression logique), RescheduleWaterReminders.
+  Rappels : WaterReminderGateway (domaine) → NotificationWaterReminderGateway
+  (data) : canal « rappels_eau », simple notification (pas de sonnerie de
+  réveil ni de plein écran), payload {"type":"eau"} ; toucher → onglet Eau.
+  di/ : waterDayProvider(jour) réutilisé par l'Accueil et l'Historique.
+  Écrans (maquette 5) : hydration_screen (anneau, ml, verres, « J'ai bu un
+  verre », « Annuler le dernier verre », encart prochain rappel ou
+  félicitations ; carte « Définissez votre objectif » au premier
+  lancement), water_goal_screen (/eau/objectif).
 
 6.5 hospitals/  (Carte)
   - location_service : position de l'utilisateur (avec autorisation).
@@ -518,7 +533,7 @@ Règle pratique : on ne crée un dossier que lorsqu'il contient un fichier
      (FAIT, avec le design system des maquettes)
   3. core/notifications + rappels + écran d'alarme (maquette 7) — FAIT,
      à tester sur le vrai téléphone (workmanager reporté)
-  4. hydration/ (maquette 5)
+  4. hydration/ (maquette 5) — FAIT
   5. dashboard/ (maquette 2 ; réutilise dayPlanProvider)
   6. hospitals/ (maquette 6)
   7. auth/ (maquette 1) + Supabase + sync

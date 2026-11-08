@@ -56,11 +56,16 @@ Future<AppDatabase> pumpApp(
 /// Attend la fin du travail en cours, y compris celui qui ne dessine rien
 /// (ex. la replanification des rappels) : les requêtes Drift ont besoin
 /// d'un peu de temps réel, que pumpAndSettle (temps simulé) ne donne pas.
+///
+/// On alterne temps réel et images courtes (et non pumpAndSettle, qui
+/// attendrait sans fin un indicateur de chargement qui tourne), puis on
+/// laisse finir les animations.
 Future<void> settle(WidgetTester tester) async {
-  for (var i = 0; i < 3; i++) {
+  for (var i = 0; i < 6; i++) {
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 20)),
     );
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 50));
   }
+  await tester.pumpAndSettle();
 }

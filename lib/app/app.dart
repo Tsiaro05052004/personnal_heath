@@ -8,6 +8,8 @@ import '../core/navigation/app_routes.dart';
 import '../core/notifications/notification_service.dart';
 import '../core/theme/app_theme.dart';
 import '../core/time/clock.dart';
+import '../features/hydration/data/reminders/water_reminder_payload.dart';
+import '../features/hydration/di/hydration_providers.dart';
 import '../features/medications/data/reminders/reminder_payload.dart';
 import '../features/medications/di/medications_providers.dart';
 import 'router.dart';
@@ -55,15 +57,26 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
   }
 
   /// Remet à jour la fenêtre glissante des rappels confiés au système.
+  /// Médicaments puis eau, l'un après l'autre : ils partagent la liste
+  /// des notifications en attente.
   Future<void> _reschedule() async {
-    try {
-      await ref.read(rescheduleRemindersProvider)();
-    } catch (e, stack) {
-      debugPrint('Replanification des rappels impossible : $e\n$stack');
+    for (final Future<void> Function() reschedule in [
+      ref.read(rescheduleRemindersProvider).call,
+      ref.read(rescheduleWaterRemindersProvider).call,
+    ]) {
+      try {
+        await reschedule();
+      } catch (e, stack) {
+        debugPrint('Replanification des rappels impossible : $e\n$stack');
+      }
     }
   }
 
   void _openTap(NotificationTap tap) {
+    if (WaterReminderPayload.isWater(tap.payload)) {
+      ref.read(routerProvider).go(AppRoutes.hydration);
+      return;
+    }
     final reminder = ReminderPayload.decode(tap.payload);
     if (reminder == null) return;
     ref

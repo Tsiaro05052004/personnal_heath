@@ -13,7 +13,8 @@ import '../mappers/meal_instruction_label.dart';
 import '../mappers/medication_error_label.dart';
 import '../viewmodels/medication_form_ui_state.dart';
 import '../viewmodels/medication_form_view_model.dart';
-import '../widgets/form_section.dart';
+import '../../../../core/widgets/form_widgets.dart';
+import '../widgets/medication_summary_card.dart';
 import '../widgets/reminder_permission_prompt.dart';
 
 /// « Nouveau médicament » / « Modifier le médicament », en 3 étapes :
@@ -263,33 +264,14 @@ class _MedicationFormScreenState extends ConsumerState<MedicationFormScreen> {
       ),
     ),
     const FormQuestion('Combien à chaque prise ?'),
-    AppCard(
-      padding: const EdgeInsets.all(10),
-      child: Row(
-        children: [
-          _StepperButton(
-            icon: Icons.remove,
-            tooltip: 'Moins',
-            onPressed: form.quantity > MedicationFormViewModel.minQuantity
-                ? _vm.decrementQuantity
-                : null,
-          ),
-          Expanded(
-            child: Text(
-              DoseLabels.quantity(form.quantity, form.unit),
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ),
-          _StepperButton(
-            icon: Icons.add,
-            tooltip: 'Plus',
-            onPressed: form.quantity < MedicationFormViewModel.maxQuantity
-                ? _vm.incrementQuantity
-                : null,
-          ),
-        ],
-      ),
+    QuantityStepper(
+      label: DoseLabels.quantity(form.quantity, form.unit),
+      onDecrement: form.quantity > MedicationFormViewModel.minQuantity
+          ? _vm.decrementQuantity
+          : null,
+      onIncrement: form.quantity < MedicationFormViewModel.maxQuantity
+          ? _vm.incrementQuantity
+          : null,
     ),
     const FormHint("Recopiez exactement l'ordonnance de votre médecin."),
   ];
@@ -485,30 +467,6 @@ class _BottomButtons extends StatelessWidget {
       ),
     );
   }
-}
-
-class _StepperButton extends StatelessWidget {
-  const _StepperButton({
-    required this.icon,
-    required this.tooltip,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) => IconButton.outlined(
-    icon: Icon(icon, size: 30),
-    tooltip: tooltip,
-    onPressed: onPressed,
-    style: IconButton.styleFrom(
-      minimumSize: const Size(64, 64),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      side: const BorderSide(color: AppColors.outline, width: 2),
-    ),
-  );
 }
 
 class _DateButton extends StatelessWidget {

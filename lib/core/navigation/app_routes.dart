@@ -13,6 +13,7 @@ abstract final class AppRoutes {
 
   // Pages plein écran (sans barre du bas).
   static const settings = '/parametres';
+  static const waterGoal = '/eau/objectif';
   static const newMedication = '/medicament/nouveau';
   static const medicationPattern = '/medicament/:id';
   static String editMedication(String id) => '/medicament/$id';

@@ -7,6 +7,7 @@ import '../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../features/history/presentation/screens/history_screen.dart';
 import '../features/hospitals/presentation/screens/hospitals_map_screen.dart';
 import '../features/hydration/presentation/screens/hydration_screen.dart';
+import '../features/hydration/presentation/screens/water_goal_screen.dart';
 import '../features/medications/presentation/screens/intake_alarm_screen.dart';
 import '../features/medications/presentation/screens/medication_form_screen.dart';
 import '../features/medications/presentation/screens/medication_list_screen.dart';
@@ -33,6 +34,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.settings,
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.waterGoal,
+        builder: (context, state) => const WaterGoalScreen(),
       ),
       // Déclarée avant « /medicament/:id » pour ne pas être prise pour un id.
       GoRoute(
