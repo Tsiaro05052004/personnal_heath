@@ -8,6 +8,8 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:personnal_heath/app/app.dart';
 import 'package:personnal_heath/core/database/app_database.dart';
 import 'package:personnal_heath/core/navigation/external_launcher.dart';
+import 'package:personnal_heath/core/preferences/preferences_store.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:personnal_heath/features/hospitals/di/hospitals_providers.dart';
 import 'package:personnal_heath/core/notifications/notification_service.dart';
 import 'package:personnal_heath/core/time/clock.dart';
@@ -28,7 +30,10 @@ Future<AppDatabase> pumpApp(
   FakeLocationGateway? location,
   FakeOverpass? overpass,
   FakeLauncher? launcher,
+  Map<String, Object> preferences = const {},
 }) async {
+  SharedPreferences.setMockInitialValues(preferences);
+  final prefs = (await tester.runAsync(SharedPreferences.getInstance))!;
   await initializeDateFormatting('fr_FR');
   // closeStreamsSynchronously : sinon Drift ferme ses flux avec une minuterie
   // que le test considère « en attente » à la fin.
@@ -60,6 +65,7 @@ Future<AppDatabase> pumpApp(
         overpassApiProvider.overrideWithValue((overpass ?? FakeOverpass()).api),
         mapTilesEnabledProvider.overrideWithValue(false),
         externalLauncherProvider.overrideWithValue(launcher ?? FakeLauncher()),
+        sharedPreferencesProvider.overrideWithValue(prefs),
       ],
       child: const App(),
     ),

@@ -19,6 +19,7 @@ import '../domain/usecases/save_medication.dart';
 import '../domain/usecases/silence_reminder.dart';
 import '../domain/usecases/snooze_reminder.dart';
 import '../domain/usecases/watch_day_plan.dart';
+import '../domain/usecases/watch_intake_logs.dart';
 import '../domain/usecases/watch_medications.dart';
 import '../presentation/mappers/reminder_texts.dart';
 
@@ -35,7 +36,9 @@ final reminderGatewayProvider = Provider<ReminderGateway>(
   (ref) => NotificationReminderGateway(
     ref.watch(notificationServiceProvider),
     ReminderTexts.build,
-    alarmSound: ref.watch(alarmSoundEnabledProvider),
+    alarmSound: ref.watch(
+      reminderPreferencesProvider.select((p) => p.alarmSound),
+    ),
   ),
 );
 
@@ -44,6 +47,7 @@ final rescheduleRemindersProvider = Provider(
     ref.watch(medicationRepositoryProvider),
     ref.watch(reminderGatewayProvider),
     () => ref.read(clockProvider),
+    followUpDelay: () => ref.read(reminderPreferencesProvider).followUpDelay,
   ),
 );
 final silenceReminderProvider = Provider(
@@ -70,6 +74,9 @@ final deleteMedicationProvider = Provider(
     ref.watch(medicationRepositoryProvider),
     ref.watch(rescheduleRemindersProvider),
   ),
+);
+final watchIntakeLogsProvider = Provider(
+  (ref) => WatchIntakeLogs(ref.watch(medicationRepositoryProvider)),
 );
 final watchDayPlanProvider = Provider(
   (ref) => WatchDayPlan(ref.watch(medicationRepositoryProvider)),

@@ -5,8 +5,9 @@ import '../entities/medication_reminder.dart';
 /// Règles des rappels (cahier des charges : rappel à l'heure, 2e rappel si
 /// la prise n'est pas confirmée, arrêt à la date de fin).
 abstract final class ReminderPlanner {
-  /// Délai du 2e rappel après l'heure prévue.
-  static const followUpDelay = Duration(minutes: 30);
+  /// Délai du 2e rappel après l'heure prévue, par défaut (réglable dans
+  /// les Paramètres).
+  static const defaultFollowUpDelay = Duration(minutes: 30);
 
   /// Délai de « Me le rappeler plus tard ».
   static const snoozeDelay = Duration(minutes: 10);
@@ -25,6 +26,7 @@ abstract final class ReminderPlanner {
     required List<Medication> medications,
     required List<IntakeLog> logs,
     required DateTime now,
+    Duration followUpDelay = defaultFollowUpDelay,
   }) {
     final handled = {
       for (final log in logs) _key(log.medicationId, log.scheduledAt),

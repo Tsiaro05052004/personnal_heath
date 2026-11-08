@@ -87,6 +87,10 @@ class FakeLocationGateway implements LocationGateway {
   int settingsOpened = 0;
 
   @override
+  Future<LocationProblem?> status() async =>
+      granted ? null : LocationProblem.permissionDenied;
+
+  @override
   Future<LocationResult> currentPosition() async => granted
       ? const LocationResult.found(testPosition)
       : const LocationResult.failed(LocationProblem.permissionDenied);

@@ -2,6 +2,10 @@ import '../entities/location_result.dart';
 
 /// Position de l'utilisateur (implémentée avec le GPS du téléphone).
 abstract interface class LocationGateway {
+  /// État de l'autorisation, sans chercher la position (Paramètres).
+  /// null = autorisée et localisation activée.
+  Future<LocationProblem?> status();
+
   /// Position actuelle, sans rien demander à l'utilisateur.
   Future<LocationResult> currentPosition();
 

@@ -28,6 +28,10 @@ abstract final class Formatters {
   static String dayTitle(DateTime date) =>
       _capitalize(DateFormat('EEEE d MMMM', 'fr_FR').format(date));
 
+  /// « Samedi »
+  static String weekday(DateTime date) =>
+      _capitalize(DateFormat('EEEE', 'fr_FR').format(date));
+
   /// « Ven » (jour abrégé, sans point).
   static String shortWeekday(DateTime date) =>
       _capitalize(DateFormat('EEE', 'fr_FR').format(date).replaceAll('.', ''));

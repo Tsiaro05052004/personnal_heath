@@ -16,7 +16,10 @@ class MedicationLocalDataSource {
 
   final AppDatabase _db;
 
-  Stream<List<MedicationWithSchedules>> watchAll() {
+  /// [includeDeleted] : aussi les médicaments supprimés (historique).
+  Stream<List<MedicationWithSchedules>> watchAll({
+    bool includeDeleted = false,
+  }) {
     final query =
         _db.select(_db.medications).join([
             leftOuterJoin(
@@ -27,7 +30,11 @@ class MedicationLocalDataSource {
                   _db.medicationSchedules.deleted.equals(false),
             ),
           ])
-          ..where(_db.medications.deleted.equals(false))
+          ..where(
+            includeDeleted
+                ? const Constant(true)
+                : _db.medications.deleted.equals(false),
+          )
           ..orderBy([OrderingTerm.asc(_db.medications.name)]);
 
     return query.watch().map((rows) {
@@ -112,31 +119,17 @@ class MedicationLocalDataSource {
     });
   }
 
-  Future<void> softDelete(String id) {
-    return _db.transaction(() async {
-      final change = (
-        deleted: const Value(true),
-        dirty: const Value(true),
-        updatedAt: Value(DateTime.now().toUtc()),
-      );
-      await (_db.update(_db.medications)..where((m) => m.id.equals(id))).write(
+  /// Suppression logique du médicament seul : ses horaires restent, pour
+  /// que l'historique des jours passés reste juste (le moment de la
+  /// suppression est `updatedAt`).
+  Future<void> softDelete(String id) =>
+      (_db.update(_db.medications)..where((m) => m.id.equals(id))).write(
         MedicationsCompanion(
-          deleted: change.deleted,
-          dirty: change.dirty,
-          updatedAt: change.updatedAt,
+          deleted: const Value(true),
+          dirty: const Value(true),
+          updatedAt: Value(DateTime.now().toUtc()),
         ),
       );
-      await (_db.update(
-        _db.medicationSchedules,
-      )..where((s) => s.medicationId.equals(id))).write(
-        MedicationSchedulesCompanion(
-          deleted: change.deleted,
-          dirty: change.dirty,
-          updatedAt: change.updatedAt,
-        ),
-      );
-    });
-  }
 
   Stream<List<IntakeLogRow>> watchLogs(DateTime from, DateTime to) {
     return (_db.select(_db.intakeLogs)..where(

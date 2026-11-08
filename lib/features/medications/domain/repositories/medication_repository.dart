@@ -5,7 +5,9 @@ import '../entities/medication.dart';
 /// écrit d'abord en local, hors ligne.
 abstract interface class MedicationRepository {
   /// Médicaments non supprimés, mis à jour à chaque modification.
-  Stream<List<Medication>> watchMedications();
+  /// [includeDeleted] : aussi les supprimés (avec [Medication.deletedAt]),
+  /// pour l'historique.
+  Stream<List<Medication>> watchMedications({bool includeDeleted = false});
 
   Future<Medication?> getMedication(String id);
 

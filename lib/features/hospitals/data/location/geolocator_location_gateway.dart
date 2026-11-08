@@ -9,6 +9,19 @@ class GeolocatorLocationGateway implements LocationGateway {
   const GeolocatorLocationGateway();
 
   @override
+  Future<LocationProblem?> status() async {
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      return LocationProblem.serviceDisabled;
+    }
+    return switch (await Geolocator.checkPermission()) {
+      LocationPermission.denied => LocationProblem.permissionDenied,
+      LocationPermission.deniedForever =>
+        LocationProblem.permissionDeniedForever,
+      _ => null,
+    };
+  }
+
+  @override
   Future<LocationResult> currentPosition() => _locate(request: false);
 
   @override

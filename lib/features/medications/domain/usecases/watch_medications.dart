@@ -6,5 +6,7 @@ class WatchMedications {
 
   final MedicationRepository _repository;
 
-  Stream<List<Medication>> call() => _repository.watchMedications();
+  /// [includeDeleted] : aussi les médicaments supprimés (historique).
+  Stream<List<Medication>> call({bool includeDeleted = false}) =>
+      _repository.watchMedications(includeDeleted: includeDeleted);
 }

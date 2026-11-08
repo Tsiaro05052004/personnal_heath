@@ -13,6 +13,16 @@ abstract final class IntakePlanner {
   /// On peut confirmer une prise un peu avant l'heure (ex. 07h45 pour 08h00).
   static const earlyConfirmWindow = Duration(minutes: 30);
 
+  /// Une prise confirmée plus de 30 min après l'heure est « en retard »
+  /// (historique). Elle compte quand même comme prise.
+  static const lateAfter = Duration(minutes: 30);
+
+  static bool isLate(ScheduledIntake intake) {
+    final takenAt = intake.takenAt;
+    return takenAt != null &&
+        takenAt.difference(intake.scheduledAt) > lateAfter;
+  }
+
   /// Prises prévues le jour [day], avec leur état à l'instant [now].
   /// [logs] peut contenir des prises d'autres jours : elles sont ignorées.
   static DayPlan planDay({
@@ -31,12 +41,13 @@ abstract final class IntakePlanner {
       if (!medication.isActiveOn(date)) continue;
       final intakes = [
         for (final time in medication.doseTimes)
-          _intake(
-            medication,
-            time.on(date),
-            logsByKey[_key(medication.id, time.on(date))],
-            now,
-          ),
+          if (medication.coversIntakeAt(time.on(date)))
+            _intake(
+              medication,
+              time.on(date),
+              logsByKey[_key(medication.id, time.on(date))],
+              now,
+            ),
       ];
       if (intakes.isNotEmpty) {
         byMedication.add(

@@ -24,6 +24,7 @@ abstract final class MedicationMapper {
       doseTimes: [
         for (final s in row.schedules) DoseTime.fromMinuteOfDay(s.minuteOfDay),
       ],
+      deletedAt: m.deleted ? m.updatedAt : null,
     );
   }
 

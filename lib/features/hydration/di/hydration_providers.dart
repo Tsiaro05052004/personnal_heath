@@ -15,6 +15,7 @@ import '../domain/usecases/reschedule_water_reminders.dart';
 import '../domain/usecases/save_water_settings.dart';
 import '../domain/usecases/undo_last_glass.dart';
 import '../domain/usecases/watch_water_day.dart';
+import '../domain/usecases/watch_water_history.dart';
 import '../presentation/mappers/water_texts.dart';
 
 /// Racine de composition de la feature hydratation.
@@ -40,6 +41,12 @@ final rescheduleWaterRemindersProvider = Provider(
 
 final watchWaterDayProvider = Provider(
   (ref) => WatchWaterDay(ref.watch(waterRepositoryProvider)),
+);
+final watchWaterSettingsProvider = Provider(
+  (ref) => WatchWaterSettings(ref.watch(waterRepositoryProvider)),
+);
+final watchWaterLogsProvider = Provider(
+  (ref) => WatchWaterLogs(ref.watch(waterRepositoryProvider)),
 );
 final getWaterSettingsProvider = Provider(
   (ref) => GetWaterSettings(ref.watch(waterRepositoryProvider)),

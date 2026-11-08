@@ -17,6 +17,7 @@ class Medication {
     required DateTime startDate,
     DateTime? endDate,
     required List<DoseTime> doseTimes,
+    this.deletedAt,
   }) : startDate = dateOnly(startDate),
        endDate = endDate == null ? null : dateOnly(endDate),
        doseTimes = List.unmodifiable([...doseTimes]..sort());
@@ -45,6 +46,10 @@ class Medication {
   /// Heures de prise, triées.
   final List<DoseTime> doseTimes;
 
+  /// Moment de la suppression ; null s'il est toujours suivi. Un
+  /// médicament supprimé compte encore pour les jours d'avant (historique).
+  final DateTime? deletedAt;
+
   bool get isNew => id.isEmpty;
 
   /// Nombre de prises par jour.
@@ -56,8 +61,15 @@ class Medication {
     final d = dateOnly(day);
     if (d.isBefore(startDate)) return false;
     final end = endDate;
-    return end == null || !d.isAfter(end);
+    if (end != null && d.isAfter(end)) return false;
+    final deleted = deletedAt;
+    return deleted == null || !d.isAfter(dateOnly(deleted));
   }
+
+  /// Une prise prévue à [at] fait-elle partie du traitement ? (Pas après
+  /// sa suppression.)
+  bool coversIntakeAt(DateTime at) =>
+      isActiveOn(at) && (deletedAt == null || at.isBefore(deletedAt!));
 
   /// Nom affiché avec le dosage : « Paracétamol 500 mg ».
   String get displayName => dosage.isEmpty ? name : '$name $dosage';
@@ -84,6 +96,7 @@ class Medication {
     startDate: startDate ?? this.startDate,
     endDate: endDate != null ? endDate() : this.endDate,
     doseTimes: doseTimes ?? this.doseTimes,
+    deletedAt: deletedAt,
   );
 }
 

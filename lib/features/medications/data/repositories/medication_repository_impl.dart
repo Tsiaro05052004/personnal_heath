@@ -12,9 +12,10 @@ class MedicationRepositoryImpl implements MedicationRepository {
   final MedicationLocalDataSource _local;
 
   @override
-  Stream<List<Medication>> watchMedications() => _local.watchAll().map(
-    (rows) => rows.map(MedicationMapper.toEntity).toList(),
-  );
+  Stream<List<Medication>> watchMedications({bool includeDeleted = false}) =>
+      _local
+          .watchAll(includeDeleted: includeDeleted)
+          .map((rows) => rows.map(MedicationMapper.toEntity).toList());
 
   @override
   Future<Medication?> getMedication(String id) async {

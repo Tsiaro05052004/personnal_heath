@@ -117,6 +117,8 @@ lib/
 │   │                             (assets/fonts, embarquée, licence OFL),
 │   │                             grands textes et boutons. Dans core/ car
 │   │                             les écrans utilisent les couleurs
+│   ├── preferences/
+│   │   └── preferences_store.dart  shared_preferences (réglages du téléphone)
 │   ├── time/
 │   │   └── clock.dart            clockProvider : heure actuelle rafraîchie
 │   │                             chaque minute. Les ViewModels ne lisent
@@ -412,21 +414,37 @@ Règle pratique : on ne crée un dossier que lorsqu'il contient un fichier
   publication, prendre un fournisseur dont les conditions le permettent
   (politique d'usage des tuiles OSM).
 
-6.6 history/  (Historique)
-  - Liste des jours passés avec leur bilan (réutilise
-    daily_summary_calculator du dashboard).
-  - Détail d'un jour : prises et verres.
-  - Évolution prévue : statistiques hebdomadaires / mensuelles.
-  Écrans : history_screen, day_detail_screen.
+6.6 history/  (Historique)  — FAIT (étape 8)
+  - Pas de données propres : lit médicaments (supprimés compris), prises,
+    objectif et verres par les use cases des autres features (di/).
+  - domain/services/history_calculator.dart : périodes « Cette semaine »
+    (7 jours) et « Ce mois » (30 jours) AVANT aujourd'hui ; un jour sans
+    prise prévue ni verre n'est pas affiché ; bilan par jour (réutilise
+    DailySummaryCalculator) : prises prévues / confirmées, en retard
+    (confirmée > 30 min après, IntakePlanner.lateAfter), non confirmées
+    (jamais « oubliées »), non prises ; verdict « Respecté » (tout
+    confirmé et objectif d'eau atteint) ou « Partiel » (jamais « raté »).
+  - Médicament supprimé : Medication.deletedAt (updatedAt de la ligne
+    supprimée) ; il compte pour les jours d'avant et les prises prévues
+    avant ce moment. La suppression ne touche plus les horaires.
+  - Limite connue : l'objectif d'eau et les horaires passés sont ceux
+    d'aujourd'hui (pas d'historique des modifications).
+  - Écran (maquette 8) : bascule semaine / mois, compteurs, liste des
+    jours (badge sous le bilan, pour tenir sur 360 dp) ; toucher un jour →
+    détail (chaque prise, « en retard », eau).
 
-6.7 settings/  (Paramètres)
-  - Profil (nom, e-mail), objectif d'eau, délai avant le 2e rappel,
-    alarme sonore oui/non.
-  - État des autorisations (notifications, alarmes exactes, localisation,
-    optimisation de batterie) avec explication et bouton pour les ouvrir.
-  - Déconnexion, suppression du compte.
-  Écran : settings_screen.
-
+6.7 settings/  (Paramètres)  — FAIT (étape 8, sauf le compte → étape 7)
+  - Rappels : « Alarme sonore » (oui par défaut), délai du 2e rappel
+    (15 min / 30 min / 1 h) — core/notifications/reminder_preferences.dart,
+    stockés avec shared_preferences (réglages de CE téléphone, non
+    synchronisés) ; tout changement replanifie les rappels.
+  - Autorisations : notifications, heure exacte, localisation (état +
+    bouton), aide « fonctionnement en arrière-plan » (Realme/Oppo/Xiaomi :
+    l'appli ne peut pas le détecter, elle explique et ouvre les réglages).
+    Relues au retour des réglages du téléphone.
+  - Lien « Mon objectif d'eau » ; « À propos » (pas un avis médical).
+  - Compte (profil, déconnexion, suppression du compte et des données) :
+    étape 7.
 
 7. SYSTÈME DE RAPPELS (point le plus sensible)  — FAIT pour les médicaments
 --------------------------------------------------------------------------------
@@ -567,6 +585,7 @@ Règle pratique : on ne crée un dossier que lorsqu'il contient un fichier
   5. dashboard/ (maquette 2) — FAIT
   6. hospitals/ (maquette 6) — FAIT
   7. auth/ (maquette 1) + Supabase + sync
-  8. history/ (maquette 8) puis settings/
+  8. history/ (maquette 8) puis settings/ — FAIT (avant l'étape 7, en
+     attendant le projet Supabase)
   Les étapes 2 à 6 fonctionnent sans compte : l'authentification est
   branchée ensuite, sans modifier les écrans.
