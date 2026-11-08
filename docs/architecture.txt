@@ -1,8 +1,11 @@
 ================================================================================
  ARCHITECTURE DU CODE — personnal_heath
  Application mobile de suivi personnel de santé et de rappels médicaux
- Statut : VALIDÉE le 2026-11-07, mise en œuvre étape par étape (section 9)
+ Statut : VALIDÉE le 2026-11-07, mise en œuvre étape par étape (section 10)
+          Révisée le 2026-11-08 : Clean Architecture stricte (use cases,
+          mappers, injection) + MVVM pour la présentation (section 5)
  Basée sur : CAHIER DES CHARGES SIMPLIFIÉ.md
+             docs/Maquettes app santé.pdf (8 écrans, référence visuelle)
 ================================================================================
 
 1. PRINCIPES DIRECTEURS
@@ -23,7 +26,9 @@ Les exigences du cahier des charges qui guident les choix :
     jamais (pas de calcul de dose, pas de « doublez la prise »).
 
 Organisation : « feature-first ». Chaque fonctionnalité du cahier des charges
-a son propre dossier, découpé en 3 couches (data / domain / presentation).
+a son propre dossier, découpé selon la CLEAN ARCHITECTURE en 3 couches
+(domain / data / presentation) + un petit dossier d'injection (di/).
+La couche presentation suit le patron MVVM (View / ViewModel / UiState).
 Le code partagé par plusieurs fonctionnalités va dans core/.
 
 
@@ -73,8 +78,10 @@ lib/
 │   ├── app.dart                  Widget racine (MaterialApp.router, thème, langue)
 │   ├── router.dart               Toutes les routes go_router + redirection
 │   │                             vers /login si l'utilisateur n'est pas connecté
-│   ├── shell_scaffold.dart       Barre de navigation du bas (5 onglets)
-│   └── theme.dart                Couleurs, typographie, grandes tailles de texte
+│   │                             (seul endroit qui connaît tous les écrans)
+│   └── shell_scaffold.dart       Barre de navigation du bas (5 onglets :
+│                                 Accueil, Médicaments, Eau, Hôpitaux,
+│                                 Historique)
 │
 ├── core/                         CODE TRANSVERSAL (utilisé par plusieurs features)
 │   ├── database/
@@ -87,7 +94,7 @@ lib/
 │   │   │                               planifier, annuler, gérer le clic
 │   │   ├── reminder_scheduler.dart     Recalcule TOUS les rappels à venir à
 │   │   │                               partir des médicaments et de l'objectif
-│   │   │                               d'eau (voir section 6)
+│   │   │                               d'eau (voir section 7)
 │   │   └── notification_ids.dart       Règle de calcul des identifiants pour
 │   │                                   pouvoir annuler un rappel précis
 │   ├── background/
@@ -96,13 +103,29 @@ lib/
 │   ├── sync/
 │   │   └── sync_service.dart     Envoie les modifications locales vers
 │   │                             Supabase et récupère celles du serveur
+│   ├── navigation/
+│   │   └── app_routes.dart       Chemins des pages (AppRoutes). Dans core/ et
+│   │                             non dans app/ : les écrans et widgets
+│   │                             partagés naviguent sans dépendre de app/
+│   ├── theme/
+│   │   ├── app_colors.dart       Couleurs relevées sur les maquettes
+│   │   └── app_theme.dart        Thème : police Atkinson Hyperlegible
+│   │                             (assets/fonts, embarquée, licence OFL),
+│   │                             grands textes et boutons. Dans core/ car
+│   │                             les écrans utilisent les couleurs
+│   ├── time/
+│   │   └── clock.dart            clockProvider : heure actuelle rafraîchie
+│   │                             chaque minute. Les ViewModels ne lisent
+│   │                             JAMAIS DateTime.now() (tests : FixedClock)
 │   ├── location/
 │   │   └── location_service.dart Permission + position actuelle + distance
 │   ├── permissions/
 │   │   └── permission_service.dart  Demande et explique les autorisations
-│   ├── utils/                    Dates, formatage, validation de formulaires
-│   └── widgets/                  Widgets réutilisables (gros bouton, carte de
-│                                 progression, état vide, dialogue de confirmation)
+│   ├── utils/
+│   │   └── formatters.dart       « 08h00 », « 08:00 », « 0,5 », « 12 nov. »…
+│   └── widgets/                  Widgets réutilisables des maquettes : AppCard,
+│                                 StatusBadge, TabPage (grand titre d'onglet),
+│                                 DashedButton, PillIcon, ProfileButton…
 │
 └── features/                     UNE FONCTIONNALITÉ = UN DOSSIER
     ├── auth/                     Connexion / Inscription / Déconnexion /
@@ -110,61 +133,147 @@ lib/
     ├── dashboard/                Accueil : résumé de la journée
     ├── medications/              Mes médicaments + Suivi des prises
     ├── hydration/                Objectif et compteur d'eau
-    ├── hospitals/                Carte des établissements de santé
+    ├── hospitals/                Onglet « Hôpitaux » : carte des
+    │                             établissements de santé
     ├── history/                  Bilans des jours précédents
     └── settings/                 Profil, notifications, alarmes, permissions
 
-Chaque dossier de features/ suit le même modèle :
+Chaque dossier de features/ suit le même modèle (exemple : medications) :
 
 features/<nom>/
-├── data/
-│   ├── local/                    Accès à la base Drift (DAO)
-│   ├── remote/                   Accès à Supabase / API externe
-│   └── <nom>_repository_impl.dart  Combine local + distant ; l'interface ne
-│                                    voit jamais d'où vient la donnée
-├── domain/
-│   ├── entities/                 Objets métier purs (aucun import Flutter)
-│   ├── <nom>_repository.dart     Interface (contrat) du dépôt
-│   └── services/                 Règles métier pures, faciles à tester
-└── presentation/
-    ├── providers/                Providers Riverpod / contrôleurs d'état
-    ├── screens/                  Pages complètes
-    └── widgets/                  Composants propres à la fonctionnalité
+├── domain/                       CŒUR — Dart pur (ni Flutter, ni Drift,
+│   │                             ni Riverpod, ni Supabase)
+│   ├── entities/                 Objets métier immuables (Medication,
+│   │                             IntakeLog…) et énumérations (IntakeStatus)
+│   ├── repositories/
+│   │   └── <nom>_repository.dart Interfaces (classes abstraites) : ce dont
+│   │                             le domaine a besoin, sans dire comment
+│   ├── usecases/                 UN fichier = UNE action métier, méthode
+│   │                             call() : AddMedication, WatchTodayIntakes,
+│   │                             ConfirmIntake, MarkIntakeMissed…
+│   └── services/                 Règles pures réutilisées par plusieurs use
+│                                 cases (intake_status_resolver…)
+├── data/                         IMPLÉMENTATION des interfaces du domaine
+│   ├── datasources/
+│   │   ├── local/                DAO Drift (requêtes sur core/database)
+│   │   └── remote/               Supabase / API externe (Overpass…)
+│   ├── mappers/                  Ligne Drift / JSON  ↔  entité du domaine.
+│   │                             Les classes générées par Drift ne sortent
+│   │                             JAMAIS de data/
+│   └── repositories/
+│       └── <nom>_repository_impl.dart  implements <Nom>Repository ; combine
+│                                       local + distant
+├── di/
+│   └── <nom>_providers.dart      Racine de composition de la feature :
+│                                 providers Riverpod qui construisent
+│                                 datasources → repository impl → use cases.
+│                                 Typés avec l'INTERFACE du domaine (les tests
+│                                 la remplacent par un faux dépôt)
+└── presentation/                 MVVM (voir section 5)
+    ├── viewmodels/
+    │   ├── <ecran>_view_model.dart  Notifier / AsyncNotifier Riverpod
+    │   └── <ecran>_ui_state.dart    État immuable affiché par l'écran
+    ├── mappers/                  Libellés et formats d'affichage
+    │                             (ex. MealInstruction → « Après le repas »)
+    ├── screens/                  Views : pages complètes
+    └── widgets/                  Views : composants propres à la feature
 
 test/ reprend la même arborescence que lib/.
+Règle pratique : on ne crée un dossier que lorsqu'il contient un fichier
+(une feature encore provisoire n'a que presentation/screens/).
 
 
-4. RÔLE DES COUCHES
+4. CLEAN ARCHITECTURE : RÔLE DES COUCHES ET RÈGLES DE DÉPENDANCE
 --------------------------------------------------------------------------------
-  presentation  →  Affiche l'état et transmet les actions de l'utilisateur.
-                   Ne contient AUCUNE règle métier ni appel SQL/réseau.
-                   Ex. : le bouton « Confirmer la prise » appelle
-                   intakeController.confirm(...).
+  domain        →  Le cœur : entités, interfaces de dépôts, use cases et
+                   règles du cahier des charges. Dart pur. C'est ici qu'on
+                   teste « 2 comprimés = 1 prise » ou « non confirmée ≠
+                   oubliée ». Un use case peut combiner plusieurs interfaces
+                   (ex. ConfirmIntake : enregistrer la prise ET annuler les
+                   rappels de suivi).
 
-  domain        →  Le cœur : entités et règles du cahier des charges.
-                   Dart pur, sans Flutter, Drift ni Supabase. C'est ici
-                   qu'on teste « 2 comprimés = 1 prise » ou « non confirmée
-                   ≠ oubliée ».
+  data          →  Implémente les interfaces du domaine. Lit et écrit les
+                   données, écrit TOUJOURS d'abord en local (hors ligne) puis
+                   marque la ligne « à synchroniser ». Convertit les lignes
+                   Drift / JSON en entités via ses mappers.
 
-  data          →  Lit et écrit les données. Écrit TOUJOURS d'abord en local
-                   (hors ligne), puis marque la ligne « à synchroniser ».
+  presentation  →  Affiche l'état et transmet les actions de l'utilisateur
+                   (MVVM, section 5). Ne contient AUCUNE règle métier ni
+                   appel SQL/réseau ; ne parle qu'aux use cases.
 
-  Sens des dépendances :  presentation → domain ← data
-  (domain ne dépend de rien ; data et presentation dépendent de domain)
+  di            →  Branche data sur domain avec des providers Riverpod
+                   (inversion de dépendance). La présentation lit les use
+                   cases ici, sans jamais importer data/ elle-même.
+
+  Sens des dépendances :
+
+        presentation ──→ domain ←── data
+              │                       ▲
+              └──→ di ────────────────┘   (di connaît les deux pour câbler)
+
+  Règles (vérifiées automatiquement par test/architecture/
+  dependency_rules_test.dart) :
+  - domain/ n'importe que dart:* (sauf dart:ui) et d'autres fichiers domain/.
+  - data/ n'importe ni presentation/, ni Flutter, ni app/.
+  - presentation/ n'importe ni data/, ni core/database/, ni Drift, ni
+    Supabase, ni app/.
+  - core/ n'importe ni app/, ni data/, ni presentation/, ni di/ d'une
+    feature. Exception assumée : core/database/ (infrastructure de data)
+    importe les énumérations de domain/entities/ pour les stocker
+    (textEnum).
+  - app/ assemble tout : rien ne dépend de app/.
+  - Entre features : on n'importe que le domain/ (ou di/) d'une autre
+    feature, jamais sa data/ ni sa presentation/ (ex. dashboard utilise les
+    use cases de medications et hydration).
 
 
-5. RÔLE DE CHAQUE FONCTIONNALITÉ
+5. MVVM : LA COUCHE PRÉSENTATION
 --------------------------------------------------------------------------------
-5.1 auth/  (Connexion / Inscription)
+  View (screens/, widgets/)
+    - ConsumerWidget. Affiche ref.watch(xxxViewModelProvider) et appelle
+      ref.read(xxxViewModelProvider.notifier).onAction(...).
+    - Aucune logique : pas de calcul, pas d'accès aux use cases ni aux
+      dépôts. Gère seulement ce qui exige un BuildContext (navigation,
+      SnackBar, dialogues) en réaction à l'état.
+
+  ViewModel (viewmodels/<ecran>_view_model.dart)
+    - Notifier<UiState> ou AsyncNotifier<UiState> de Riverpod, un par écran
+      (ou par fiche/formulaire complexe).
+    - Reçoit les use cases via ref.watch(...) sur les providers de di/.
+    - Transforme les entités en UiState prêt à afficher ; expose des
+      méthodes d'action (confirmIntake, addGlass, save…).
+    - N'importe JAMAIS package:flutter/material.dart, ne manipule ni
+      BuildContext ni widget → testable avec un simple ProviderContainer.
+
+  UiState (viewmodels/<ecran>_ui_state.dart)
+    - Classe immuable (champs final + copyWith) : tout ce que l'écran
+      affiche, y compris chargement / erreur / message de réussite.
+    - AsyncValue<UiState> pour les états chargement/erreur des données
+      asynchrones.
+
+  Flux à sens unique :
+      View ──action──→ ViewModel ──→ UseCase ──→ Repository (interface)
+       ▲                   │
+       └──── UiState ──────┘   (les Stream Drift remontent jusqu'au
+                                ViewModel, qui publie un nouvel état)
+
+  Les écrans provisoires actuels (étape 1) n'ont ni état ni action : ils
+  n'ont donc pas encore de ViewModel. Chaque écran en reçoit un dès qu'il
+  affiche des données (à partir de l'étape 2).
+
+
+6. RÔLE DE CHAQUE FONCTIONNALITÉ
+--------------------------------------------------------------------------------
+6.1 auth/  (Connexion / Inscription)
   - Inscription : nom, e-mail, mot de passe (Supabase Auth hache les mots
     de passe, rien n'est stocké en clair dans l'application).
   - Connexion, déconnexion, mot de passe oublié.
   - Suppression du compte ET de toutes les données (exigence CDC 6.3) :
     serveur + base locale + rappels planifiés.
-  - authStateProvider : écouté par router.dart pour rediriger.
+  - authStateProvider (di/) : écouté par router.dart pour rediriger.
   Écrans : login_screen, register_screen.
 
-5.2 dashboard/  (Accueil)
+6.2 dashboard/  (Accueil)
   - Ne stocke rien : il AGRÈGE les données des autres features.
   - Affiche : prises prévues aujourd'hui, confirmées, en attente, en
     retard / non confirmées, verres bus / objectif, barre de progression.
@@ -172,33 +281,61 @@ test/ reprend la même arborescence que lib/.
     jour (réutilisé par history/).
   Écran : dashboard_screen.
 
-5.3 medications/  (Mes médicaments + Suivi des prises)
-  Entités :
+6.3 medications/  (Mes médicaments + Suivi des prises)  — FAIT (étape 2)
+  Entités (domain/entities) :
   - Medication : id, nom, dosage (« 500 mg »), quantitéParPrise (ex. 2
-    comprimés), unité, instructions (avant/après repas), dateDébut,
-    dateFin, actif.
-  - MedicationSchedule : une heure de prise (ex. 08:00). La FRÉQUENCE
+    comprimés), unité, consigne repas, remarques, dateDébut, dateFin
+    (incluse, null = sans fin), doseTimes (heures de prise). La FRÉQUENCE
     n'est pas stockée : c'est le nombre d'horaires.
-  - IntakeLog : une prise enregistrée : medicationId, heurePrévue,
-    statut (pris | oublié), heureRéelle, quantitéPrise.
-  Règles (domain/services/intake_status_resolver.dart) :
-  - Statut affiché d'une prise prévue :
-      « Pris »            → IntakeLog statut pris (heureRéelle conservée,
-                            badge « en retard » si après le délai)
-      « Oublié »          → l'utilisateur l'a déclaré lui-même
-      « Non confirmée »   → heure passée, aucun log (JAMAIS « oubliée »
-                            automatiquement)
-      « En attente »      → prochaine prise
-      « À venir »         → plus tard dans la journée
-  - Compteur « 1 prise sur 3 » = prises confirmées / horaires du jour.
-  - Comprimés consommés = somme des quantitéPrise (distinct des prises).
-  - Après dateFin : plus aucun horaire généré → plus de rappel.
-  - Modifier / supprimer un médicament → reminder_scheduler replanifie.
-  Écrans : medication_list_screen (Mes médicaments),
-           medication_form_screen (ajout/modification),
-           intake_tracking_screen (Suivi du jour + « Confirmer la prise »).
+  - DoseTime : heure de prise (stockée en minutes depuis minuit).
+  - IntakeLog : prise sur laquelle l'utilisateur a agi : statut (pris |
+    non pris), heure prévue, heure RÉELLE, quantité prise.
+  - ScheduledIntake + IntakeState : prise prévue un jour donné et son état
+    affiché (calculé, jamais stocké). DayPlan : toutes les prises d'un jour,
+    regroupées par médicament (MedicationDay).
+  Règles (domain/services) :
+  - intake_planner.dart — état d'une prise :
+      Pris           → IntakeLog « pris » (heure réelle affichée)
+      Non pris       → l'utilisateur l'a déclaré lui-même
+      En attente     → heure passée depuis moins de 2 h, pas de log
+      Non confirmée  → heure passée depuis plus de 2 h, pas de log
+                       (JAMAIS « oubliée » automatiquement)
+      À venir        → plus tard
+    Confirmation possible dès 30 min avant l'heure, et en retard (l'heure
+    réelle est enregistrée), même après « non pris ». « Je ne l'ai pas
+    pris » seulement une fois l'heure passée. Prochaine prise = la plus
+    ancienne en attente, sinon la prochaine à venir (pour l'Accueil).
+    Compteur « 1 prise sur 3 » = prises confirmées / prises prévues ;
+    unités consommées = somme des quantités (distinct des prises).
+    Avant dateDébut / après dateFin : aucune prise prévue → aucun rappel.
+  - medication_rules.dart — saisie : nom obligatoire, au moins un horaire,
+    pas deux fois la même heure, quantité > 0, fin ≥ début ; horaires
+    proposés selon 1× à 4× par jour (08:00 / 14:00 / 20:00…). L'appli
+    recopie l'ordonnance, elle ne propose ni ne modifie jamais de dose.
+  Use cases : WatchMedications, GetMedication, SaveMedication,
+  DeleteMedication (suppression logique ; l'historique des prises reste),
+  WatchDayPlan, ConfirmIntake, MarkIntakeMissed.
+  (Étape 3 : SaveMedication/DeleteMedication replanifieront les rappels et
+  ConfirmIntake annulera le 2e rappel, via une interface du domaine
+  implémentée dans core/notifications.)
+  di/ : medicationRepositoryProvider + un provider par use case +
+  dayPlanProvider(jour) (réutilisé par l'Accueil).
+  ViewModels : MedicationListViewModel (jour choisi, plan du jour,
+  confirmer / non pris), MedicationFormViewModel (formulaire en 3 étapes,
+  family par id).
+  Écrans (maquettes 3 et 4) :
+  - medication_list_screen : bandeau de 5 jours, une carte par
+    médicament avec ses prises, bouton « Confirmer » sur les prises en
+    attente, fiche du bas au toucher d'une prise (« J'ai pris mon
+    médicament » / « Je ne l'ai pas pris » + rappel « ne doublez jamais
+    une dose »), « Ajouter un médicament ».
+  - medication_form_screen (/medicament/nouveau, /medicament/:id) :
+    1. Médicament (nom, dosage, forme) ; 2. Horaires (1× à 4×, heures,
+    quantité par pas de 0,5) ; 3. Durée et consignes (repas, début, fin,
+    remarques). Suppression depuis l'icône corbeille en modification.
+  - L'écran d'alarme plein écran (maquette 7) sera fait à l'étape 3.
 
-5.4 hydration/  (Hydratation)
+6.4 hydration/  (Hydratation)
   Entités :
   - WaterSettings : objectifVerres, mlParVerre, heureRéveil, heureCoucher,
     rappelsActivés.
@@ -213,7 +350,7 @@ test/ reprend la même arborescence que lib/.
   Écrans : hydration_screen (compteur « 3 / 5 » + « Ajouter un verre »),
            hydration_setup_screen (premier paramétrage).
 
-5.5 hospitals/  (Carte)
+6.5 hospitals/  (Carte)
   - location_service : position de l'utilisateur (avec autorisation).
   - remote/overpass_api.dart : récupère hôpitaux, cliniques et centres de
     santé dans un rayon donné (requête Overpass sur les données OSM).
@@ -230,14 +367,14 @@ test/ reprend la même arborescence que lib/.
   - Afficher un avertissement : les informations peuvent être obsolètes.
   Écrans : hospitals_map_screen, facility_detail_sheet (fiche en bas).
 
-5.6 history/  (Historique)
+6.6 history/  (Historique)
   - Liste des jours passés avec leur bilan (réutilise
     daily_summary_calculator du dashboard).
   - Détail d'un jour : prises et verres.
   - Évolution prévue : statistiques hebdomadaires / mensuelles.
   Écrans : history_screen, day_detail_screen.
 
-5.7 settings/  (Paramètres)
+6.7 settings/  (Paramètres)
   - Profil (nom, e-mail), objectif d'eau, délai avant le 2e rappel,
     alarme sonore oui/non.
   - État des autorisations (notifications, alarmes exactes, localisation,
@@ -246,7 +383,7 @@ test/ reprend la même arborescence que lib/.
   Écran : settings_screen.
 
 
-6. SYSTÈME DE RAPPELS (point le plus sensible)
+7. SYSTÈME DE RAPPELS (point le plus sensible)
 --------------------------------------------------------------------------------
   Fonctionnement :
   1. reminder_scheduler calcule les rappels des prochains jours (fenêtre
@@ -274,12 +411,15 @@ test/ reprend la même arborescence que lib/.
   pour désactiver l'optimisation de batterie de l'application.
 
 
-7. DONNÉES ET SYNCHRONISATION
+8. DONNÉES ET SYNCHRONISATION
 --------------------------------------------------------------------------------
   Tables (identiques en local Drift et sur Supabase) :
     profiles, medications, medication_schedules, intake_logs,
     water_settings, water_logs
   (+ hospitals_cache : uniquement en local)
+
+  Les classes de lignes Drift sont suffixées « Row » (MedicationRow,
+  IntakeLogRow…) pour ne pas se confondre avec les entités du domaine.
 
   Chaque ligne a : id (UUID généré sur le téléphone), user_id,
   updated_at, deleted (suppression logique) et, en local, un indicateur
@@ -294,29 +434,34 @@ test/ reprend la même arborescence que lib/.
   modifiées depuis la dernière synchro (la plus récente gagne).
 
 
-8. FLUX D'EXEMPLE : « Confirmer la prise »
+9. FLUX D'EXEMPLE : « Confirmer la prise »
 --------------------------------------------------------------------------------
-  intake_tracking_screen  (bouton)
-     → IntakeController.confirm(prise)                 [presentation]
-     → MedicationRepository.recordIntake(log)          [domain : contrat]
-     → MedicationRepositoryImpl                        [data]
-         ├─ écrit l'IntakeLog dans Drift (heure réelle)
-         ├─ NotificationService.cancelFollowUps(prise)
-         └─ SyncService.markDirty()
-     → Drift émet un Stream → les providers se mettent à jour
+  IntakeTrackingScreen (bouton)                       [View]
+     → IntakeTrackingViewModel.confirmIntake(prise)    [ViewModel]
+     → ConfirmIntake(prise, maintenant)                [domain : use case]
+         ├─ crée l'entité IntakeLog (statut pris, heure RÉELLE)
+         ├─ MedicationRepository.recordIntake(log)     [domain : interface]
+         │    → MedicationRepositoryImpl               [data]
+         │        └─ mapper → écrit dans Drift (dirty = true → à synchroniser)
+         └─ ReminderPlanner.cancelFollowUps(prise)     [domain : interface]
+              → implémentation dans core/notifications
+     → Drift émet un Stream → WatchTodayIntakes → le ViewModel publie un
+       nouvel UiState → l'écran se redessine
      → le compteur « 2 prises sur 3 » et le tableau de bord se rafraîchissent
 
 
-9. ORDRE DE DÉVELOPPEMENT CONSEILLÉ (MVP)
+10. ORDRE DE DÉVELOPPEMENT CONSEILLÉ (MVP)
 --------------------------------------------------------------------------------
   1. Socle : dépendances, app/ (thème, router, barre de navigation), base Drift
-  2. medications/ (CRUD + suivi) — cœur de l'application, en local
-  3. core/notifications + reminder_scheduler — à tester tôt sur le vrai
-     téléphone
-  4. hydration/
-  5. dashboard/
-  6. hospitals/ (carte)
-  7. auth/ + Supabase + sync
-  8. history/ puis settings/
+  2. medications/ (CRUD + suivi) — cœur de l'application, en local ; premier
+     exemple complet entités → use cases → dépôt → ViewModel → écran
+     (FAIT, avec le design system des maquettes)
+  3. core/notifications + reminder_scheduler + écran d'alarme (maquette 7)
+     — à tester tôt sur le vrai téléphone
+  4. hydration/ (maquette 5)
+  5. dashboard/ (maquette 2 ; réutilise dayPlanProvider)
+  6. hospitals/ (maquette 6)
+  7. auth/ (maquette 1) + Supabase + sync
+  8. history/ (maquette 8) puis settings/
   Les étapes 2 à 6 fonctionnent sans compte : l'authentification est
   branchée ensuite, sans modifier les écrans.

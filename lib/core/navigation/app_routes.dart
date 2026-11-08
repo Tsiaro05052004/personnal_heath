@@ -1,0 +1,19 @@
+/// Chemins des pages, pour éviter les chaînes en dur dans les écrans.
+///
+/// Placé dans core/ (et non dans app/router.dart) pour que les widgets
+/// partagés et les écrans puissent naviguer sans dépendre de app/ :
+/// app/ assemble l'application, rien ne doit dépendre de lui.
+abstract final class AppRoutes {
+  // Onglets de la barre du bas.
+  static const dashboard = '/';
+  static const medications = '/medicaments';
+  static const hydration = '/hydratation';
+  static const hospitals = '/hopitaux';
+  static const history = '/historique';
+
+  // Pages plein écran (sans barre du bas).
+  static const settings = '/parametres';
+  static const newMedication = '/medicament/nouveau';
+  static const medicationPattern = '/medicament/:id';
+  static String editMedication(String id) => '/medicament/$id';
+}

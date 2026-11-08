@@ -5,6 +5,7 @@ import 'sync_columns.dart';
 
 /// Un traitement. La fréquence n'est pas stockée : c'est le nombre
 /// d'horaires dans [MedicationSchedules].
+@DataClassName('MedicationRow')
 class Medications extends Table with SyncColumns {
   TextColumn get name => text().withLength(min: 1, max: 100)();
 

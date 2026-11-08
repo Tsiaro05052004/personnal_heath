@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 /// Derniers établissements de santé récupérés d'OpenStreetMap, pour que la
 /// carte reste utilisable hors ligne. Local uniquement (pas synchronisé).
+@DataClassName('HospitalRow')
 class HospitalsCache extends Table {
   /// Identifiant OSM, ex. « node/123456 ».
   TextColumn get osmId => text()();

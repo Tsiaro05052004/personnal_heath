@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import 'sync_columns.dart';
 
 /// Réglages de l'objectif d'eau (une seule ligne par utilisateur).
+@DataClassName('WaterSettingsRow')
 class WaterSettingsTable extends Table with SyncColumns {
   @override
   String get tableName => 'water_settings';
@@ -20,6 +21,7 @@ class WaterSettingsTable extends Table with SyncColumns {
 }
 
 /// Un verre bu.
+@DataClassName('WaterLogRow')
 class WaterLogs extends Table with SyncColumns {
   DateTimeColumn get drankAt => dateTime()();
   IntColumn get ml => integer()();

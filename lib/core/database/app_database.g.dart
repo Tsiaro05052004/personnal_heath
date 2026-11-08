@@ -4,7 +4,7 @@ part of 'app_database.dart';
 
 // ignore_for_file: type=lint
 class $MedicationsTable extends Medications
-    with TableInfo<$MedicationsTable, Medication> {
+    with TableInfo<$MedicationsTable, MedicationRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -192,7 +192,7 @@ class $MedicationsTable extends Medications
   static const String $name = 'medications';
   @override
   VerificationContext validateIntegrity(
-    Insertable<Medication> instance, {
+    Insertable<MedicationRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -285,9 +285,9 @@ class $MedicationsTable extends Medications
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  Medication map(Map<String, dynamic> data, {String? tablePrefix}) {
+  MedicationRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Medication(
+    return MedicationRow(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
@@ -360,7 +360,7 @@ class $MedicationsTable extends Medications
   );
 }
 
-class Medication extends DataClass implements Insertable<Medication> {
+class MedicationRow extends DataClass implements Insertable<MedicationRow> {
   /// UUID généré sur le téléphone : la ligne a un id avant même d'être
   /// envoyée au serveur (hors ligne d'abord).
   final String id;
@@ -393,7 +393,7 @@ class Medication extends DataClass implements Insertable<Medication> {
   /// Après cette date : plus d'horaires générés, donc plus de rappels.
   final DateTime? endDate;
   final bool active;
-  const Medication({
+  const MedicationRow({
     required this.id,
     this.userId,
     required this.updatedAt,
@@ -464,12 +464,12 @@ class Medication extends DataClass implements Insertable<Medication> {
     );
   }
 
-  factory Medication.fromJson(
+  factory MedicationRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Medication(
+    return MedicationRow(
       id: serializer.fromJson<String>(json['id']),
       userId: serializer.fromJson<String?>(json['userId']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -511,7 +511,7 @@ class Medication extends DataClass implements Insertable<Medication> {
     };
   }
 
-  Medication copyWith({
+  MedicationRow copyWith({
     String? id,
     Value<String?> userId = const Value.absent(),
     DateTime? updatedAt,
@@ -526,7 +526,7 @@ class Medication extends DataClass implements Insertable<Medication> {
     DateTime? startDate,
     Value<DateTime?> endDate = const Value.absent(),
     bool? active,
-  }) => Medication(
+  }) => MedicationRow(
     id: id ?? this.id,
     userId: userId.present ? userId.value : this.userId,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -542,8 +542,8 @@ class Medication extends DataClass implements Insertable<Medication> {
     endDate: endDate.present ? endDate.value : this.endDate,
     active: active ?? this.active,
   );
-  Medication copyWithCompanion(MedicationsCompanion data) {
-    return Medication(
+  MedicationRow copyWithCompanion(MedicationsCompanion data) {
+    return MedicationRow(
       id: data.id.present ? data.id.value : this.id,
       userId: data.userId.present ? data.userId.value : this.userId,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -567,7 +567,7 @@ class Medication extends DataClass implements Insertable<Medication> {
 
   @override
   String toString() {
-    return (StringBuffer('Medication(')
+    return (StringBuffer('MedicationRow(')
           ..write('id: $id, ')
           ..write('userId: $userId, ')
           ..write('updatedAt: $updatedAt, ')
@@ -606,7 +606,7 @@ class Medication extends DataClass implements Insertable<Medication> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is Medication &&
+      (other is MedicationRow &&
           other.id == this.id &&
           other.userId == this.userId &&
           other.updatedAt == this.updatedAt &&
@@ -623,7 +623,7 @@ class Medication extends DataClass implements Insertable<Medication> {
           other.active == this.active);
 }
 
-class MedicationsCompanion extends UpdateCompanion<Medication> {
+class MedicationsCompanion extends UpdateCompanion<MedicationRow> {
   final Value<String> id;
   final Value<String?> userId;
   final Value<DateTime> updatedAt;
@@ -674,7 +674,7 @@ class MedicationsCompanion extends UpdateCompanion<Medication> {
     this.rowid = const Value.absent(),
   }) : name = Value(name),
        startDate = Value(startDate);
-  static Insertable<Medication> custom({
+  static Insertable<MedicationRow> custom({
     Expression<String>? id,
     Expression<String>? userId,
     Expression<DateTime>? updatedAt,
@@ -825,7 +825,7 @@ class MedicationsCompanion extends UpdateCompanion<Medication> {
 }
 
 class $MedicationSchedulesTable extends MedicationSchedules
-    with TableInfo<$MedicationSchedulesTable, MedicationSchedule> {
+    with TableInfo<$MedicationSchedulesTable, MedicationScheduleRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -932,7 +932,7 @@ class $MedicationSchedulesTable extends MedicationSchedules
   static const String $name = 'medication_schedules';
   @override
   VerificationContext validateIntegrity(
-    Insertable<MedicationSchedule> instance, {
+    Insertable<MedicationScheduleRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -992,9 +992,9 @@ class $MedicationSchedulesTable extends MedicationSchedules
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  MedicationSchedule map(Map<String, dynamic> data, {String? tablePrefix}) {
+  MedicationScheduleRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return MedicationSchedule(
+    return MedicationScheduleRow(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
@@ -1032,8 +1032,8 @@ class $MedicationSchedulesTable extends MedicationSchedules
   }
 }
 
-class MedicationSchedule extends DataClass
-    implements Insertable<MedicationSchedule> {
+class MedicationScheduleRow extends DataClass
+    implements Insertable<MedicationScheduleRow> {
   /// UUID généré sur le téléphone : la ligne a un id avant même d'être
   /// envoyée au serveur (hors ligne d'abord).
   final String id;
@@ -1051,7 +1051,7 @@ class MedicationSchedule extends DataClass
 
   /// Minutes depuis minuit en heure locale (08:00 → 480).
   final int minuteOfDay;
-  const MedicationSchedule({
+  const MedicationScheduleRow({
     required this.id,
     this.userId,
     required this.updatedAt,
@@ -1089,12 +1089,12 @@ class MedicationSchedule extends DataClass
     );
   }
 
-  factory MedicationSchedule.fromJson(
+  factory MedicationScheduleRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return MedicationSchedule(
+    return MedicationScheduleRow(
       id: serializer.fromJson<String>(json['id']),
       userId: serializer.fromJson<String?>(json['userId']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -1118,7 +1118,7 @@ class MedicationSchedule extends DataClass
     };
   }
 
-  MedicationSchedule copyWith({
+  MedicationScheduleRow copyWith({
     String? id,
     Value<String?> userId = const Value.absent(),
     DateTime? updatedAt,
@@ -1126,7 +1126,7 @@ class MedicationSchedule extends DataClass
     bool? dirty,
     String? medicationId,
     int? minuteOfDay,
-  }) => MedicationSchedule(
+  }) => MedicationScheduleRow(
     id: id ?? this.id,
     userId: userId.present ? userId.value : this.userId,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -1135,8 +1135,8 @@ class MedicationSchedule extends DataClass
     medicationId: medicationId ?? this.medicationId,
     minuteOfDay: minuteOfDay ?? this.minuteOfDay,
   );
-  MedicationSchedule copyWithCompanion(MedicationSchedulesCompanion data) {
-    return MedicationSchedule(
+  MedicationScheduleRow copyWithCompanion(MedicationSchedulesCompanion data) {
+    return MedicationScheduleRow(
       id: data.id.present ? data.id.value : this.id,
       userId: data.userId.present ? data.userId.value : this.userId,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -1153,7 +1153,7 @@ class MedicationSchedule extends DataClass
 
   @override
   String toString() {
-    return (StringBuffer('MedicationSchedule(')
+    return (StringBuffer('MedicationScheduleRow(')
           ..write('id: $id, ')
           ..write('userId: $userId, ')
           ..write('updatedAt: $updatedAt, ')
@@ -1178,7 +1178,7 @@ class MedicationSchedule extends DataClass
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is MedicationSchedule &&
+      (other is MedicationScheduleRow &&
           other.id == this.id &&
           other.userId == this.userId &&
           other.updatedAt == this.updatedAt &&
@@ -1188,7 +1188,8 @@ class MedicationSchedule extends DataClass
           other.minuteOfDay == this.minuteOfDay);
 }
 
-class MedicationSchedulesCompanion extends UpdateCompanion<MedicationSchedule> {
+class MedicationSchedulesCompanion
+    extends UpdateCompanion<MedicationScheduleRow> {
   final Value<String> id;
   final Value<String?> userId;
   final Value<DateTime> updatedAt;
@@ -1218,7 +1219,7 @@ class MedicationSchedulesCompanion extends UpdateCompanion<MedicationSchedule> {
     this.rowid = const Value.absent(),
   }) : medicationId = Value(medicationId),
        minuteOfDay = Value(minuteOfDay);
-  static Insertable<MedicationSchedule> custom({
+  static Insertable<MedicationScheduleRow> custom({
     Expression<String>? id,
     Expression<String>? userId,
     Expression<DateTime>? updatedAt,
@@ -1309,7 +1310,7 @@ class MedicationSchedulesCompanion extends UpdateCompanion<MedicationSchedule> {
 }
 
 class $IntakeLogsTable extends IntakeLogs
-    with TableInfo<$IntakeLogsTable, IntakeLog> {
+    with TableInfo<$IntakeLogsTable, IntakeLogRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -1449,7 +1450,7 @@ class $IntakeLogsTable extends IntakeLogs
   static const String $name = 'intake_logs';
   @override
   VerificationContext validateIntegrity(
-    Insertable<IntakeLog> instance, {
+    Insertable<IntakeLogRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -1528,9 +1529,9 @@ class $IntakeLogsTable extends IntakeLogs
     {medicationId, scheduledAt},
   ];
   @override
-  IntakeLog map(Map<String, dynamic> data, {String? tablePrefix}) {
+  IntakeLogRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return IntakeLog(
+    return IntakeLogRow(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
@@ -1585,7 +1586,7 @@ class $IntakeLogsTable extends IntakeLogs
       const EnumNameConverter<IntakeStatus>(IntakeStatus.values);
 }
 
-class IntakeLog extends DataClass implements Insertable<IntakeLog> {
+class IntakeLogRow extends DataClass implements Insertable<IntakeLogRow> {
   /// UUID généré sur le téléphone : la ligne a un id avant même d'être
   /// envoyée au serveur (hors ligne d'abord).
   final String id;
@@ -1610,7 +1611,7 @@ class IntakeLog extends DataClass implements Insertable<IntakeLog> {
 
   /// Unités réellement prises (pour le compteur de comprimés).
   final double? quantityTaken;
-  const IntakeLog({
+  const IntakeLogRow({
     required this.id,
     this.userId,
     required this.updatedAt,
@@ -1669,12 +1670,12 @@ class IntakeLog extends DataClass implements Insertable<IntakeLog> {
     );
   }
 
-  factory IntakeLog.fromJson(
+  factory IntakeLogRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return IntakeLog(
+    return IntakeLogRow(
       id: serializer.fromJson<String>(json['id']),
       userId: serializer.fromJson<String?>(json['userId']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -1708,7 +1709,7 @@ class IntakeLog extends DataClass implements Insertable<IntakeLog> {
     };
   }
 
-  IntakeLog copyWith({
+  IntakeLogRow copyWith({
     String? id,
     Value<String?> userId = const Value.absent(),
     DateTime? updatedAt,
@@ -1719,7 +1720,7 @@ class IntakeLog extends DataClass implements Insertable<IntakeLog> {
     IntakeStatus? status,
     Value<DateTime?> takenAt = const Value.absent(),
     Value<double?> quantityTaken = const Value.absent(),
-  }) => IntakeLog(
+  }) => IntakeLogRow(
     id: id ?? this.id,
     userId: userId.present ? userId.value : this.userId,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -1733,8 +1734,8 @@ class IntakeLog extends DataClass implements Insertable<IntakeLog> {
         ? quantityTaken.value
         : this.quantityTaken,
   );
-  IntakeLog copyWithCompanion(IntakeLogsCompanion data) {
-    return IntakeLog(
+  IntakeLogRow copyWithCompanion(IntakeLogsCompanion data) {
+    return IntakeLogRow(
       id: data.id.present ? data.id.value : this.id,
       userId: data.userId.present ? data.userId.value : this.userId,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -1756,7 +1757,7 @@ class IntakeLog extends DataClass implements Insertable<IntakeLog> {
 
   @override
   String toString() {
-    return (StringBuffer('IntakeLog(')
+    return (StringBuffer('IntakeLogRow(')
           ..write('id: $id, ')
           ..write('userId: $userId, ')
           ..write('updatedAt: $updatedAt, ')
@@ -1787,7 +1788,7 @@ class IntakeLog extends DataClass implements Insertable<IntakeLog> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is IntakeLog &&
+      (other is IntakeLogRow &&
           other.id == this.id &&
           other.userId == this.userId &&
           other.updatedAt == this.updatedAt &&
@@ -1800,7 +1801,7 @@ class IntakeLog extends DataClass implements Insertable<IntakeLog> {
           other.quantityTaken == this.quantityTaken);
 }
 
-class IntakeLogsCompanion extends UpdateCompanion<IntakeLog> {
+class IntakeLogsCompanion extends UpdateCompanion<IntakeLogRow> {
   final Value<String> id;
   final Value<String?> userId;
   final Value<DateTime> updatedAt;
@@ -1840,7 +1841,7 @@ class IntakeLogsCompanion extends UpdateCompanion<IntakeLog> {
   }) : medicationId = Value(medicationId),
        scheduledAt = Value(scheduledAt),
        status = Value(status);
-  static Insertable<IntakeLog> custom({
+  static Insertable<IntakeLogRow> custom({
     Expression<String>? id,
     Expression<String>? userId,
     Expression<DateTime>? updatedAt,
@@ -1957,7 +1958,7 @@ class IntakeLogsCompanion extends UpdateCompanion<IntakeLog> {
 }
 
 class $WaterSettingsTableTable extends WaterSettingsTable
-    with TableInfo<$WaterSettingsTableTable, WaterSettingsTableData> {
+    with TableInfo<$WaterSettingsTableTable, WaterSettingsRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -2104,7 +2105,7 @@ class $WaterSettingsTableTable extends WaterSettingsTable
   static const String $name = 'water_settings';
   @override
   VerificationContext validateIntegrity(
-    Insertable<WaterSettingsTableData> instance, {
+    Insertable<WaterSettingsRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -2184,9 +2185,9 @@ class $WaterSettingsTableTable extends WaterSettingsTable
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  WaterSettingsTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+  WaterSettingsRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return WaterSettingsTableData(
+    return WaterSettingsRow(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
@@ -2236,8 +2237,8 @@ class $WaterSettingsTableTable extends WaterSettingsTable
   }
 }
 
-class WaterSettingsTableData extends DataClass
-    implements Insertable<WaterSettingsTableData> {
+class WaterSettingsRow extends DataClass
+    implements Insertable<WaterSettingsRow> {
   /// UUID généré sur le téléphone : la ligne a un id avant même d'être
   /// envoyée au serveur (hors ligne d'abord).
   final String id;
@@ -2259,7 +2260,7 @@ class WaterSettingsTableData extends DataClass
   final int wakeMinute;
   final int sleepMinute;
   final bool remindersEnabled;
-  const WaterSettingsTableData({
+  const WaterSettingsRow({
     required this.id,
     this.userId,
     required this.updatedAt,
@@ -2306,12 +2307,12 @@ class WaterSettingsTableData extends DataClass
     );
   }
 
-  factory WaterSettingsTableData.fromJson(
+  factory WaterSettingsRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return WaterSettingsTableData(
+    return WaterSettingsRow(
       id: serializer.fromJson<String>(json['id']),
       userId: serializer.fromJson<String?>(json['userId']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -2341,7 +2342,7 @@ class WaterSettingsTableData extends DataClass
     };
   }
 
-  WaterSettingsTableData copyWith({
+  WaterSettingsRow copyWith({
     String? id,
     Value<String?> userId = const Value.absent(),
     DateTime? updatedAt,
@@ -2352,7 +2353,7 @@ class WaterSettingsTableData extends DataClass
     int? wakeMinute,
     int? sleepMinute,
     bool? remindersEnabled,
-  }) => WaterSettingsTableData(
+  }) => WaterSettingsRow(
     id: id ?? this.id,
     userId: userId.present ? userId.value : this.userId,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -2364,8 +2365,8 @@ class WaterSettingsTableData extends DataClass
     sleepMinute: sleepMinute ?? this.sleepMinute,
     remindersEnabled: remindersEnabled ?? this.remindersEnabled,
   );
-  WaterSettingsTableData copyWithCompanion(WaterSettingsTableCompanion data) {
-    return WaterSettingsTableData(
+  WaterSettingsRow copyWithCompanion(WaterSettingsTableCompanion data) {
+    return WaterSettingsRow(
       id: data.id.present ? data.id.value : this.id,
       userId: data.userId.present ? data.userId.value : this.userId,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -2391,7 +2392,7 @@ class WaterSettingsTableData extends DataClass
 
   @override
   String toString() {
-    return (StringBuffer('WaterSettingsTableData(')
+    return (StringBuffer('WaterSettingsRow(')
           ..write('id: $id, ')
           ..write('userId: $userId, ')
           ..write('updatedAt: $updatedAt, ')
@@ -2422,7 +2423,7 @@ class WaterSettingsTableData extends DataClass
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is WaterSettingsTableData &&
+      (other is WaterSettingsRow &&
           other.id == this.id &&
           other.userId == this.userId &&
           other.updatedAt == this.updatedAt &&
@@ -2435,8 +2436,7 @@ class WaterSettingsTableData extends DataClass
           other.remindersEnabled == this.remindersEnabled);
 }
 
-class WaterSettingsTableCompanion
-    extends UpdateCompanion<WaterSettingsTableData> {
+class WaterSettingsTableCompanion extends UpdateCompanion<WaterSettingsRow> {
   final Value<String> id;
   final Value<String?> userId;
   final Value<DateTime> updatedAt;
@@ -2474,7 +2474,7 @@ class WaterSettingsTableCompanion
     this.remindersEnabled = const Value.absent(),
     this.rowid = const Value.absent(),
   });
-  static Insertable<WaterSettingsTableData> custom({
+  static Insertable<WaterSettingsRow> custom({
     Expression<String>? id,
     Expression<String>? userId,
     Expression<DateTime>? updatedAt,
@@ -2589,7 +2589,7 @@ class WaterSettingsTableCompanion
 }
 
 class $WaterLogsTable extends WaterLogs
-    with TableInfo<$WaterLogsTable, WaterLog> {
+    with TableInfo<$WaterLogsTable, WaterLogRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -2690,7 +2690,7 @@ class $WaterLogsTable extends WaterLogs
   static const String $name = 'water_logs';
   @override
   VerificationContext validateIntegrity(
-    Insertable<WaterLog> instance, {
+    Insertable<WaterLogRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -2741,9 +2741,9 @@ class $WaterLogsTable extends WaterLogs
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  WaterLog map(Map<String, dynamic> data, {String? tablePrefix}) {
+  WaterLogRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return WaterLog(
+    return WaterLogRow(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
@@ -2781,7 +2781,7 @@ class $WaterLogsTable extends WaterLogs
   }
 }
 
-class WaterLog extends DataClass implements Insertable<WaterLog> {
+class WaterLogRow extends DataClass implements Insertable<WaterLogRow> {
   /// UUID généré sur le téléphone : la ligne a un id avant même d'être
   /// envoyée au serveur (hors ligne d'abord).
   final String id;
@@ -2797,7 +2797,7 @@ class WaterLog extends DataClass implements Insertable<WaterLog> {
   final bool dirty;
   final DateTime drankAt;
   final int ml;
-  const WaterLog({
+  const WaterLogRow({
     required this.id,
     this.userId,
     required this.updatedAt,
@@ -2835,12 +2835,12 @@ class WaterLog extends DataClass implements Insertable<WaterLog> {
     );
   }
 
-  factory WaterLog.fromJson(
+  factory WaterLogRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return WaterLog(
+    return WaterLogRow(
       id: serializer.fromJson<String>(json['id']),
       userId: serializer.fromJson<String?>(json['userId']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -2864,7 +2864,7 @@ class WaterLog extends DataClass implements Insertable<WaterLog> {
     };
   }
 
-  WaterLog copyWith({
+  WaterLogRow copyWith({
     String? id,
     Value<String?> userId = const Value.absent(),
     DateTime? updatedAt,
@@ -2872,7 +2872,7 @@ class WaterLog extends DataClass implements Insertable<WaterLog> {
     bool? dirty,
     DateTime? drankAt,
     int? ml,
-  }) => WaterLog(
+  }) => WaterLogRow(
     id: id ?? this.id,
     userId: userId.present ? userId.value : this.userId,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -2881,8 +2881,8 @@ class WaterLog extends DataClass implements Insertable<WaterLog> {
     drankAt: drankAt ?? this.drankAt,
     ml: ml ?? this.ml,
   );
-  WaterLog copyWithCompanion(WaterLogsCompanion data) {
-    return WaterLog(
+  WaterLogRow copyWithCompanion(WaterLogsCompanion data) {
+    return WaterLogRow(
       id: data.id.present ? data.id.value : this.id,
       userId: data.userId.present ? data.userId.value : this.userId,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -2895,7 +2895,7 @@ class WaterLog extends DataClass implements Insertable<WaterLog> {
 
   @override
   String toString() {
-    return (StringBuffer('WaterLog(')
+    return (StringBuffer('WaterLogRow(')
           ..write('id: $id, ')
           ..write('userId: $userId, ')
           ..write('updatedAt: $updatedAt, ')
@@ -2913,7 +2913,7 @@ class WaterLog extends DataClass implements Insertable<WaterLog> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is WaterLog &&
+      (other is WaterLogRow &&
           other.id == this.id &&
           other.userId == this.userId &&
           other.updatedAt == this.updatedAt &&
@@ -2923,7 +2923,7 @@ class WaterLog extends DataClass implements Insertable<WaterLog> {
           other.ml == this.ml);
 }
 
-class WaterLogsCompanion extends UpdateCompanion<WaterLog> {
+class WaterLogsCompanion extends UpdateCompanion<WaterLogRow> {
   final Value<String> id;
   final Value<String?> userId;
   final Value<DateTime> updatedAt;
@@ -2953,7 +2953,7 @@ class WaterLogsCompanion extends UpdateCompanion<WaterLog> {
     this.rowid = const Value.absent(),
   }) : drankAt = Value(drankAt),
        ml = Value(ml);
-  static Insertable<WaterLog> custom({
+  static Insertable<WaterLogRow> custom({
     Expression<String>? id,
     Expression<String>? userId,
     Expression<DateTime>? updatedAt,
@@ -3044,7 +3044,7 @@ class WaterLogsCompanion extends UpdateCompanion<WaterLog> {
 }
 
 class $HospitalsCacheTable extends HospitalsCache
-    with TableInfo<$HospitalsCacheTable, HospitalsCacheData> {
+    with TableInfo<$HospitalsCacheTable, HospitalRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -3147,7 +3147,7 @@ class $HospitalsCacheTable extends HospitalsCache
   static const String $name = 'hospitals_cache';
   @override
   VerificationContext validateIntegrity(
-    Insertable<HospitalsCacheData> instance, {
+    Insertable<HospitalRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -3218,9 +3218,9 @@ class $HospitalsCacheTable extends HospitalsCache
   @override
   Set<GeneratedColumn> get $primaryKey => {osmId};
   @override
-  HospitalsCacheData map(Map<String, dynamic> data, {String? tablePrefix}) {
+  HospitalRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return HospitalsCacheData(
+    return HospitalRow(
       osmId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}osm_id'],
@@ -3262,8 +3262,7 @@ class $HospitalsCacheTable extends HospitalsCache
   }
 }
 
-class HospitalsCacheData extends DataClass
-    implements Insertable<HospitalsCacheData> {
+class HospitalRow extends DataClass implements Insertable<HospitalRow> {
   /// Identifiant OSM, ex. « node/123456 ».
   final String osmId;
   final String name;
@@ -3275,7 +3274,7 @@ class HospitalsCacheData extends DataClass
   final double longitude;
   final String? phone;
   final DateTime fetchedAt;
-  const HospitalsCacheData({
+  const HospitalRow({
     required this.osmId,
     required this.name,
     required this.type,
@@ -3320,12 +3319,12 @@ class HospitalsCacheData extends DataClass
     );
   }
 
-  factory HospitalsCacheData.fromJson(
+  factory HospitalRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return HospitalsCacheData(
+    return HospitalRow(
       osmId: serializer.fromJson<String>(json['osmId']),
       name: serializer.fromJson<String>(json['name']),
       type: serializer.fromJson<String>(json['type']),
@@ -3351,7 +3350,7 @@ class HospitalsCacheData extends DataClass
     };
   }
 
-  HospitalsCacheData copyWith({
+  HospitalRow copyWith({
     String? osmId,
     String? name,
     String? type,
@@ -3360,7 +3359,7 @@ class HospitalsCacheData extends DataClass
     double? longitude,
     Value<String?> phone = const Value.absent(),
     DateTime? fetchedAt,
-  }) => HospitalsCacheData(
+  }) => HospitalRow(
     osmId: osmId ?? this.osmId,
     name: name ?? this.name,
     type: type ?? this.type,
@@ -3370,8 +3369,8 @@ class HospitalsCacheData extends DataClass
     phone: phone.present ? phone.value : this.phone,
     fetchedAt: fetchedAt ?? this.fetchedAt,
   );
-  HospitalsCacheData copyWithCompanion(HospitalsCacheCompanion data) {
-    return HospitalsCacheData(
+  HospitalRow copyWithCompanion(HospitalsCacheCompanion data) {
+    return HospitalRow(
       osmId: data.osmId.present ? data.osmId.value : this.osmId,
       name: data.name.present ? data.name.value : this.name,
       type: data.type.present ? data.type.value : this.type,
@@ -3385,7 +3384,7 @@ class HospitalsCacheData extends DataClass
 
   @override
   String toString() {
-    return (StringBuffer('HospitalsCacheData(')
+    return (StringBuffer('HospitalRow(')
           ..write('osmId: $osmId, ')
           ..write('name: $name, ')
           ..write('type: $type, ')
@@ -3412,7 +3411,7 @@ class HospitalsCacheData extends DataClass
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is HospitalsCacheData &&
+      (other is HospitalRow &&
           other.osmId == this.osmId &&
           other.name == this.name &&
           other.type == this.type &&
@@ -3423,7 +3422,7 @@ class HospitalsCacheData extends DataClass
           other.fetchedAt == this.fetchedAt);
 }
 
-class HospitalsCacheCompanion extends UpdateCompanion<HospitalsCacheData> {
+class HospitalsCacheCompanion extends UpdateCompanion<HospitalRow> {
   final Value<String> osmId;
   final Value<String> name;
   final Value<String> type;
@@ -3460,7 +3459,7 @@ class HospitalsCacheCompanion extends UpdateCompanion<HospitalsCacheData> {
        latitude = Value(latitude),
        longitude = Value(longitude),
        fetchedAt = Value(fetchedAt);
-  static Insertable<HospitalsCacheData> custom({
+  static Insertable<HospitalRow> custom({
     Expression<String>? osmId,
     Expression<String>? name,
     Expression<String>? type,
@@ -3621,12 +3620,12 @@ typedef $$MedicationsTableUpdateCompanionBuilder =
     });
 
 final class $$MedicationsTableReferences
-    extends BaseReferences<_$AppDatabase, $MedicationsTable, Medication> {
+    extends BaseReferences<_$AppDatabase, $MedicationsTable, MedicationRow> {
   $$MedicationsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static MultiTypedResultKey<
     $MedicationSchedulesTable,
-    List<MedicationSchedule>
+    List<MedicationScheduleRow>
   >
   _medicationSchedulesRefsTable(_$AppDatabase db) =>
       MultiTypedResultKey.fromTable(
@@ -3648,7 +3647,7 @@ final class $$MedicationsTableReferences
     );
   }
 
-  static MultiTypedResultKey<$IntakeLogsTable, List<IntakeLog>>
+  static MultiTypedResultKey<$IntakeLogsTable, List<IntakeLogRow>>
   _intakeLogsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.intakeLogs,
     aliasName: 'medications__id__intake_logs__medication_id',
@@ -3991,14 +3990,14 @@ class $$MedicationsTableTableManager
         RootTableManager<
           _$AppDatabase,
           $MedicationsTable,
-          Medication,
+          MedicationRow,
           $$MedicationsTableFilterComposer,
           $$MedicationsTableOrderingComposer,
           $$MedicationsTableAnnotationComposer,
           $$MedicationsTableCreateCompanionBuilder,
           $$MedicationsTableUpdateCompanionBuilder,
-          (Medication, $$MedicationsTableReferences),
-          Medication,
+          (MedicationRow, $$MedicationsTableReferences),
+          MedicationRow,
           PrefetchHooks Function({
             bool medicationSchedulesRefs,
             bool intakeLogsRefs,
@@ -4086,7 +4085,7 @@ class $$MedicationsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable<$MedicationsTable, Medication>(table),
+                  e.readTable<$MedicationsTable, MedicationRow>(table),
                   $$MedicationsTableReferences(db, table, e),
                 ),
               )
@@ -4104,9 +4103,9 @@ class $$MedicationsTableTableManager
                     return [
                       if (medicationSchedulesRefs)
                         await $_getPrefetchedDataByColumns<
-                          Medication,
+                          MedicationRow,
                           $MedicationsTable,
-                          MedicationSchedule,
+                          MedicationScheduleRow,
                           $MedicationSchedulesTable
                         >(
                           currentTable: table,
@@ -4124,9 +4123,9 @@ class $$MedicationsTableTableManager
                         ),
                       if (intakeLogsRefs)
                         await $_getPrefetchedDataByColumns<
-                          Medication,
+                          MedicationRow,
                           $MedicationsTable,
-                          IntakeLog,
+                          IntakeLogRow,
                           $IntakeLogsTable
                         >(
                           currentTable: table,
@@ -4154,14 +4153,14 @@ typedef $$MedicationsTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
       $MedicationsTable,
-      Medication,
+      MedicationRow,
       $$MedicationsTableFilterComposer,
       $$MedicationsTableOrderingComposer,
       $$MedicationsTableAnnotationComposer,
       $$MedicationsTableCreateCompanionBuilder,
       $$MedicationsTableUpdateCompanionBuilder,
-      (Medication, $$MedicationsTableReferences),
-      Medication,
+      (MedicationRow, $$MedicationsTableReferences),
+      MedicationRow,
       PrefetchHooks Function({
         bool medicationSchedulesRefs,
         bool intakeLogsRefs,
@@ -4195,7 +4194,7 @@ final class $$MedicationSchedulesTableReferences
         BaseReferences<
           _$AppDatabase,
           $MedicationSchedulesTable,
-          MedicationSchedule
+          MedicationScheduleRow
         > {
   $$MedicationSchedulesTableReferences(
     super.$_db,
@@ -4406,14 +4405,14 @@ class $$MedicationSchedulesTableTableManager
         RootTableManager<
           _$AppDatabase,
           $MedicationSchedulesTable,
-          MedicationSchedule,
+          MedicationScheduleRow,
           $$MedicationSchedulesTableFilterComposer,
           $$MedicationSchedulesTableOrderingComposer,
           $$MedicationSchedulesTableAnnotationComposer,
           $$MedicationSchedulesTableCreateCompanionBuilder,
           $$MedicationSchedulesTableUpdateCompanionBuilder,
-          (MedicationSchedule, $$MedicationSchedulesTableReferences),
-          MedicationSchedule,
+          (MedicationScheduleRow, $$MedicationSchedulesTableReferences),
+          MedicationScheduleRow,
           PrefetchHooks Function({bool medicationId})
         > {
   $$MedicationSchedulesTableTableManager(
@@ -4478,7 +4477,7 @@ class $$MedicationSchedulesTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable<$MedicationSchedulesTable, MedicationSchedule>(
+                  e.readTable<$MedicationSchedulesTable, MedicationScheduleRow>(
                     table,
                   ),
                   $$MedicationSchedulesTableReferences(db, table, e),
@@ -4532,14 +4531,14 @@ typedef $$MedicationSchedulesTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
       $MedicationSchedulesTable,
-      MedicationSchedule,
+      MedicationScheduleRow,
       $$MedicationSchedulesTableFilterComposer,
       $$MedicationSchedulesTableOrderingComposer,
       $$MedicationSchedulesTableAnnotationComposer,
       $$MedicationSchedulesTableCreateCompanionBuilder,
       $$MedicationSchedulesTableUpdateCompanionBuilder,
-      (MedicationSchedule, $$MedicationSchedulesTableReferences),
-      MedicationSchedule,
+      (MedicationScheduleRow, $$MedicationSchedulesTableReferences),
+      MedicationScheduleRow,
       PrefetchHooks Function({bool medicationId})
     >;
 typedef $$IntakeLogsTableCreateCompanionBuilder = IntakeLogsCompanion Function({
@@ -4570,7 +4569,7 @@ typedef $$IntakeLogsTableUpdateCompanionBuilder = IntakeLogsCompanion Function({
 });
 
 final class $$IntakeLogsTableReferences
-    extends BaseReferences<_$AppDatabase, $IntakeLogsTable, IntakeLog> {
+    extends BaseReferences<_$AppDatabase, $IntakeLogsTable, IntakeLogRow> {
   $$IntakeLogsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static $MedicationsTable _medicationIdTable(_$AppDatabase db) =>
@@ -4817,14 +4816,14 @@ class $$IntakeLogsTableTableManager
         RootTableManager<
           _$AppDatabase,
           $IntakeLogsTable,
-          IntakeLog,
+          IntakeLogRow,
           $$IntakeLogsTableFilterComposer,
           $$IntakeLogsTableOrderingComposer,
           $$IntakeLogsTableAnnotationComposer,
           $$IntakeLogsTableCreateCompanionBuilder,
           $$IntakeLogsTableUpdateCompanionBuilder,
-          (IntakeLog, $$IntakeLogsTableReferences),
-          IntakeLog,
+          (IntakeLogRow, $$IntakeLogsTableReferences),
+          IntakeLogRow,
           PrefetchHooks Function({bool medicationId})
         > {
   $$IntakeLogsTableTableManager(_$AppDatabase db, $IntakeLogsTable table)
@@ -4893,7 +4892,7 @@ class $$IntakeLogsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable<$IntakeLogsTable, IntakeLog>(table),
+                  e.readTable<$IntakeLogsTable, IntakeLogRow>(table),
                   $$IntakeLogsTableReferences(db, table, e),
                 ),
               )
@@ -4945,14 +4944,14 @@ typedef $$IntakeLogsTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
       $IntakeLogsTable,
-      IntakeLog,
+      IntakeLogRow,
       $$IntakeLogsTableFilterComposer,
       $$IntakeLogsTableOrderingComposer,
       $$IntakeLogsTableAnnotationComposer,
       $$IntakeLogsTableCreateCompanionBuilder,
       $$IntakeLogsTableUpdateCompanionBuilder,
-      (IntakeLog, $$IntakeLogsTableReferences),
-      IntakeLog,
+      (IntakeLogRow, $$IntakeLogsTableReferences),
+      IntakeLogRow,
       PrefetchHooks Function({bool medicationId})
     >;
 typedef $$WaterSettingsTableTableCreateCompanionBuilder =
@@ -5159,21 +5158,21 @@ class $$WaterSettingsTableTableTableManager
         RootTableManager<
           _$AppDatabase,
           $WaterSettingsTableTable,
-          WaterSettingsTableData,
+          WaterSettingsRow,
           $$WaterSettingsTableTableFilterComposer,
           $$WaterSettingsTableTableOrderingComposer,
           $$WaterSettingsTableTableAnnotationComposer,
           $$WaterSettingsTableTableCreateCompanionBuilder,
           $$WaterSettingsTableTableUpdateCompanionBuilder,
           (
-            WaterSettingsTableData,
+            WaterSettingsRow,
             BaseReferences<
               _$AppDatabase,
               $WaterSettingsTableTable,
-              WaterSettingsTableData
+              WaterSettingsRow
             >,
           ),
-          WaterSettingsTableData,
+          WaterSettingsRow,
           PrefetchHooks Function()
         > {
   $$WaterSettingsTableTableTableManager(
@@ -5247,13 +5246,13 @@ class $$WaterSettingsTableTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable<$WaterSettingsTableTable, WaterSettingsTableData>(
+                  e.readTable<$WaterSettingsTableTable, WaterSettingsRow>(
                     table,
                   ),
                   BaseReferences<
                     _$AppDatabase,
                     $WaterSettingsTableTable,
-                    WaterSettingsTableData
+                    WaterSettingsRow
                   >(db, table, e),
                 ),
               )
@@ -5267,21 +5266,21 @@ typedef $$WaterSettingsTableTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
       $WaterSettingsTableTable,
-      WaterSettingsTableData,
+      WaterSettingsRow,
       $$WaterSettingsTableTableFilterComposer,
       $$WaterSettingsTableTableOrderingComposer,
       $$WaterSettingsTableTableAnnotationComposer,
       $$WaterSettingsTableTableCreateCompanionBuilder,
       $$WaterSettingsTableTableUpdateCompanionBuilder,
       (
-        WaterSettingsTableData,
+        WaterSettingsRow,
         BaseReferences<
           _$AppDatabase,
           $WaterSettingsTableTable,
-          WaterSettingsTableData
+          WaterSettingsRow
         >,
       ),
-      WaterSettingsTableData,
+      WaterSettingsRow,
       PrefetchHooks Function()
     >;
 typedef $$WaterLogsTableCreateCompanionBuilder = WaterLogsCompanion Function({
@@ -5431,14 +5430,17 @@ class $$WaterLogsTableTableManager
         RootTableManager<
           _$AppDatabase,
           $WaterLogsTable,
-          WaterLog,
+          WaterLogRow,
           $$WaterLogsTableFilterComposer,
           $$WaterLogsTableOrderingComposer,
           $$WaterLogsTableAnnotationComposer,
           $$WaterLogsTableCreateCompanionBuilder,
           $$WaterLogsTableUpdateCompanionBuilder,
-          (WaterLog, BaseReferences<_$AppDatabase, $WaterLogsTable, WaterLog>),
-          WaterLog,
+          (
+            WaterLogRow,
+            BaseReferences<_$AppDatabase, $WaterLogsTable, WaterLogRow>,
+          ),
+          WaterLogRow,
           PrefetchHooks Function()
         > {
   $$WaterLogsTableTableManager(_$AppDatabase db, $WaterLogsTable table)
@@ -5495,8 +5497,8 @@ class $$WaterLogsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable<$WaterLogsTable, WaterLog>(table),
-                  BaseReferences<_$AppDatabase, $WaterLogsTable, WaterLog>(
+                  e.readTable<$WaterLogsTable, WaterLogRow>(table),
+                  BaseReferences<_$AppDatabase, $WaterLogsTable, WaterLogRow>(
                     db,
                     table,
                     e,
@@ -5513,14 +5515,17 @@ typedef $$WaterLogsTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
       $WaterLogsTable,
-      WaterLog,
+      WaterLogRow,
       $$WaterLogsTableFilterComposer,
       $$WaterLogsTableOrderingComposer,
       $$WaterLogsTableAnnotationComposer,
       $$WaterLogsTableCreateCompanionBuilder,
       $$WaterLogsTableUpdateCompanionBuilder,
-      (WaterLog, BaseReferences<_$AppDatabase, $WaterLogsTable, WaterLog>),
-      WaterLog,
+      (
+        WaterLogRow,
+        BaseReferences<_$AppDatabase, $WaterLogsTable, WaterLogRow>,
+      ),
+      WaterLogRow,
       PrefetchHooks Function()
     >;
 typedef $$HospitalsCacheTableCreateCompanionBuilder =
@@ -5687,21 +5692,17 @@ class $$HospitalsCacheTableTableManager
         RootTableManager<
           _$AppDatabase,
           $HospitalsCacheTable,
-          HospitalsCacheData,
+          HospitalRow,
           $$HospitalsCacheTableFilterComposer,
           $$HospitalsCacheTableOrderingComposer,
           $$HospitalsCacheTableAnnotationComposer,
           $$HospitalsCacheTableCreateCompanionBuilder,
           $$HospitalsCacheTableUpdateCompanionBuilder,
           (
-            HospitalsCacheData,
-            BaseReferences<
-              _$AppDatabase,
-              $HospitalsCacheTable,
-              HospitalsCacheData
-            >,
+            HospitalRow,
+            BaseReferences<_$AppDatabase, $HospitalsCacheTable, HospitalRow>,
           ),
-          HospitalsCacheData,
+          HospitalRow,
           PrefetchHooks Function()
         > {
   $$HospitalsCacheTableTableManager(
@@ -5764,11 +5765,11 @@ class $$HospitalsCacheTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable<$HospitalsCacheTable, HospitalsCacheData>(table),
+                  e.readTable<$HospitalsCacheTable, HospitalRow>(table),
                   BaseReferences<
                     _$AppDatabase,
                     $HospitalsCacheTable,
-                    HospitalsCacheData
+                    HospitalRow
                   >(db, table, e),
                 ),
               )
@@ -5782,17 +5783,17 @@ typedef $$HospitalsCacheTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
       $HospitalsCacheTable,
-      HospitalsCacheData,
+      HospitalRow,
       $$HospitalsCacheTableFilterComposer,
       $$HospitalsCacheTableOrderingComposer,
       $$HospitalsCacheTableAnnotationComposer,
       $$HospitalsCacheTableCreateCompanionBuilder,
       $$HospitalsCacheTableUpdateCompanionBuilder,
       (
-        HospitalsCacheData,
-        BaseReferences<_$AppDatabase, $HospitalsCacheTable, HospitalsCacheData>,
+        HospitalRow,
+        BaseReferences<_$AppDatabase, $HospitalsCacheTable, HospitalRow>,
       ),
-      HospitalsCacheData,
+      HospitalRow,
       PrefetchHooks Function()
     >;
 

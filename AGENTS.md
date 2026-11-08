@@ -6,7 +6,7 @@ Shared instructions for AI coding agents (Claude Code, Codex, Gemini) working in
 
 Flutter app `personnal_heath` (personal health tracker — note the package name keeps the "heath" spelling; don't "fix" it in imports, it would break `package:personnal_heath/...`).
 
-Step 1 of the architecture (foundation) is done: theme, go_router shell with 5 bottom tabs, Drift database with all tables, placeholder screens per feature. No business feature is implemented yet; see `docs/progress.md` for the current step.
+Steps 1 (foundation) and 2 (`medications/`: CRUD + daily intake tracking) are done; the other tabs are placeholders. UI follows the mockups in `docs/Maquettes app santé.pdf` (8 screens; open it before building a screen). See `docs/progress.md` for the current step.
 
 - Dart SDK `^3.13.5`; main deps: flutter_riverpod 3, go_router, drift + drift_flutter, intl, uuid.
 - Lints: `flutter_lints` (`analysis_options.yaml`), with platform folders and `build/` excluded from analysis.
@@ -52,11 +52,19 @@ flutter build apk --debug                    # Android build (JDK 21 configured 
 
 ## Architecture
 
-**Validated by the user on 2026-11-07; being implemented step by step** (order in section 9 of the doc). Full description (French): `docs/architecture.txt`. Read it before adding code.
+**Validated by the user on 2026-11-07, revised 2026-11-08 to strict Clean Architecture + MVVM; being implemented step by step** (order in section 10 of the doc). Full description (French): `docs/architecture.txt`. Read it before adding code.
 
-- Feature-first: `lib/app/` (root widget, go_router, bottom nav shell, theme), `lib/core/` (Drift DB, notifications + reminder scheduler, background tasks, sync, location, permissions, shared widgets), `lib/features/<auth|dashboard|medications|hydration|hospitals|history|settings>/` each split into `data/` (local DAO, remote, repository impl), `domain/` (pure-Dart entities, repository interface, business-rule services), `presentation/` (Riverpod providers, screens, widgets).
+- Feature-first: `lib/app/` (root widget, go_router, bottom nav shell, theme), `lib/core/` (Drift DB, navigation routes, notifications + reminder scheduler, background tasks, sync, location, permissions, shared widgets), `lib/features/<auth|dashboard|medications|hydration|hospitals|history|settings>/`, each following Clean Architecture:
+  - `domain/` (pure Dart: `entities/`, `repositories/` interfaces, `usecases/` one action per class with `call()`, `services/` pure rules);
+  - `data/` (`datasources/local|remote`, `mappers/` Drift row/JSON ↔ entity — Drift classes never leave `data/`, `repositories/` impls);
+  - `di/<feature>_providers.dart` (Riverpod providers wiring datasources → repo impl → use cases, typed with the domain interface);
+  - `presentation/` in MVVM: `viewmodels/` (`Notifier`/`AsyncNotifier` per screen + immutable `UiState`, no Flutter widgets/BuildContext, talks only to use cases), `mappers/` (display labels, e.g. `MealInstructionLabel`), `screens/` + `widgets/` (Views: `ConsumerWidget`, render state, forward actions, no logic).
+- Dependency rules (`presentation → domain ← data`, `core ↛ app`, presentation never imports `data/` or Drift, domain never imports packages) are enforced by `test/architecture/dependency_rules_test.dart`. Create a folder only when it holds a file.
 - Stack: Riverpod, go_router, Drift (local DB = source of truth, offline-first), Supabase (auth + Postgres with RLS `user_id = auth.uid()`, sync), flutter_local_notifications + timezone + workmanager, flutter_map + Overpass API + geolocator, url_launcher.
-- Implemented conventions: bottom tabs = Accueil, Médicaments, Eau, Carte, Historique; Paramètres is a full-screen route opened from the ⚙ app-bar icon (`SettingsAction`). Route paths live in `AppRoutes` (`lib/app/router.dart`). The DB is exposed by `appDatabaseProvider`; tests override it with `AppDatabase(NativeDatabase.memory())`.
+- Implemented conventions: bottom tabs = Accueil, Médicaments, Eau, Hôpitaux, Historique; tab screens have no AppBar but a `TabPage` big title; Paramètres is a full-screen route opened from the round profile button on Accueil (`ProfileButton`). Full-screen pages (forms, settings) live outside the shell. Design system in `lib/core/theme/` (`AppColors` from the mockups, `AppTheme`, bundled Atkinson Hyperlegible font) and shared widgets in `lib/core/widgets/` (`AppCard`, `StatusBadge`, `DashedButton`, `PillIcon`…).
+- Time: never call `DateTime.now()` in ViewModels; watch `clockProvider` (`lib/core/time/clock.dart`, ticks every minute). Widget tests use `test/helpers/pump_app.dart` (in-memory DB with `closeStreamsSynchronously`, `FixedClock` at 2026-11-08 14:10, phone-sized view).
+- Riverpod 3 recreates a Notifier on every rebuild: keep state that must survive (e.g. selected day) in its own provider, and use `ref.read` (not `watch`) in form ViewModels so they don't reset. Route paths live in `AppRoutes` (`lib/core/navigation/app_routes.dart`, so screens/shared widgets don't depend on `app/`); the routes themselves in `lib/app/router.dart`. The DB is exposed by `appDatabaseProvider`; tests override it with `AppDatabase(NativeDatabase.memory())`.
+- Drift row classes are suffixed `Row` (`@DataClassName('MedicationRow')`) so they never clash with domain entities; mappers in `data/mappers/` convert them.
 - Drift tables use the `SyncColumns` mixin (UUID `id` via `newId()`, `userId`, `updatedAt`, `deleted`, `dirty`). Times of day are stored as minutes since midnight. Domain enums (`MealInstruction`, `IntakeStatus`) are stored with `textEnum`. Generated `*.g.dart` files are committed.
 - Reminders are OS-scheduled over a rolling 2–3 day window and rebuilt on app start, on treatment/water changes, daily, and after reboot. Confirming an intake cancels its follow-up reminder and alarm.
 

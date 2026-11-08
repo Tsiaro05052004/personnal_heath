@@ -2,23 +2,15 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/navigation/app_routes.dart';
 import '../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../features/history/presentation/screens/history_screen.dart';
 import '../features/hospitals/presentation/screens/hospitals_map_screen.dart';
 import '../features/hydration/presentation/screens/hydration_screen.dart';
+import '../features/medications/presentation/screens/medication_form_screen.dart';
 import '../features/medications/presentation/screens/medication_list_screen.dart';
 import '../features/settings/presentation/screens/settings_screen.dart';
 import 'shell_scaffold.dart';
-
-/// Chemins des pages, pour éviter les chaînes en dur dans les écrans.
-abstract final class AppRoutes {
-  static const dashboard = '/';
-  static const medications = '/medicaments';
-  static const hydration = '/hydratation';
-  static const map = '/carte';
-  static const history = '/historique';
-  static const settings = '/parametres';
-}
 
 /// Toutes les routes de l'application.
 /// À venir (étape 7) : redirection vers /connexion si non connecté.
@@ -32,14 +24,24 @@ final routerProvider = Provider<GoRouter>((ref) {
           _tab(AppRoutes.dashboard, const DashboardScreen()),
           _tab(AppRoutes.medications, const MedicationListScreen()),
           _tab(AppRoutes.hydration, const HydrationScreen()),
-          _tab(AppRoutes.map, const HospitalsMapScreen()),
+          _tab(AppRoutes.hospitals, const HospitalsMapScreen()),
           _tab(AppRoutes.history, const HistoryScreen()),
         ],
       ),
-      // Paramètres : hors de la barre du bas, ouvert depuis l'icône ⚙.
+      // Pages plein écran, sans la barre du bas.
       GoRoute(
         path: AppRoutes.settings,
         builder: (context, state) => const SettingsScreen(),
+      ),
+      // Déclarée avant « /medicament/:id » pour ne pas être prise pour un id.
+      GoRoute(
+        path: AppRoutes.newMedication,
+        builder: (context, state) => const MedicationFormScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.medicationPattern,
+        builder: (context, state) =>
+            MedicationFormScreen(medicationId: state.pathParameters['id']),
       ),
     ],
   );

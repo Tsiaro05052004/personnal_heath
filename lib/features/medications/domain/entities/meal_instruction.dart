@@ -1,11 +1,5 @@
 /// Consigne de prise par rapport au repas.
-enum MealInstruction {
-  none('Aucune consigne'),
-  beforeMeal('Avant le repas'),
-  duringMeal('Pendant le repas'),
-  afterMeal('Après le repas');
-
-  const MealInstruction(this.label);
-
-  final String label;
-}
+///
+/// Entité du domaine : aucun texte d'affichage ici. Le libellé français est
+/// fourni par la présentation (voir `meal_instruction_label.dart`).
+enum MealInstruction { none, beforeMeal, duringMeal, afterMeal }

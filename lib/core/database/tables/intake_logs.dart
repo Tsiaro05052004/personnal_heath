@@ -5,6 +5,7 @@ import 'medications.dart';
 import 'sync_columns.dart';
 
 /// Une prise sur laquelle l'utilisateur a agi (confirmée ou déclarée oubliée).
+@DataClassName('IntakeLogRow')
 class IntakeLogs extends Table with SyncColumns {
   TextColumn get medicationId => text().references(Medications, #id)();
 
